@@ -1,0 +1,4 @@
+Displayer structures:
+
+General displayer function declarations etc.
+Specialized displayers implement those
