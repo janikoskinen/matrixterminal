@@ -1,4 +1,31 @@
-Displayer structures:
+*** Displayer structures:
+*************************
+displayer_api
 
 General displayer function declarations etc.
 Specialized displayers implement those
+
+
+*** Key listener:
+*****************
+keypad_handler.h
+
+- key listener callback set
+- key down/up
+- key downtime when released
+
+
+*** Display:
+************
+
+display_handler.h
+
+- display write
+- scrollers
+- gpo
+
+
+*** General:
+************
+
+- 
