@@ -1,13 +1,16 @@
-#ifndef _LK204_HANDLER_H
-#define _LK204_HANDLER_H
+
+#define _GNU_SOURCE
 
 #include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #define DEBUG
 #include "debug.h"
 
+#include "mt2lk_defs.h"
 #include "display_handler.h"
 #include "keypad_handler.h"
 
@@ -22,10 +25,29 @@ static void set_nonblock(int fd) {
 }
 
 
-/* *** Display api routines *** */
+/*
+************************************************************
+*                                                          *
+*                       DISPLAY                            *
+*                                                          *
+************************************************************
+*/
 
-display_handler_t *display_handler_init(struct ev_loop *loop, int disp_fd) {
+
+/*
+*** Display local routines ***
+*/
+
+
+
+/*
+*** Display api routines ***
+*/
+
+display_handler_t *display_handler_init(struct ev_loop *loop, int disp_fd)
+{
   display_handler_t *dh = NULL;
+  int i;
 
   dh = malloc(sizeof(display_handler_t));
 
@@ -37,10 +59,119 @@ display_handler_t *display_handler_init(struct ev_loop *loop, int disp_fd) {
   dh->scrollers = NULL;
   dh->loop = loop;
 
+  dh->write_targets = DISPLAY_TARGET_BUF1;
+  dh->gpo_value = 0;
+
+  // Clear buffers;
+  for (i = 0 ; i < 4 ; i++)
+    snprintf(dh->buffer[0].data[i], 21, "                    ");
+  for (i = 0 ; i < 4 ; i++)
+    snprintf(dh->buffer[1].data[i], 21, "                    ");
+
   return dh;
 }
 
 
+void display_handler_close(display_handler_t *dhandler)
+{
+
+}
+
+
+int display_handler_set_write_target(display_handler_t *dhandler,
+				     int targets) {
+  if (targets < 0 || targets > 7)
+    return -1;
+  else {
+    dhandler->write_targets = targets;
+    return 0;
+  }
+}
+
+
+int display_handler_write(display_handler_t *dhandler, char *str)
+{
+  int target = 0;
+
+  if (!dhandler)
+    return -1;
+
+  // Write to screen -> Not supported (TODO)
+  if (dhandler->write_targets & DISPLAY_TARGET_SCREEN) {
+    return -2;
+  }
+
+  // Buffers here, TODO: in loop
+  if ((dhandler->write_targets >> (target+1)) & 1) {
+    // TODO: line wrap
+    memcpy(&dhandler->buffer[target].data[dhandler->buffer[target].row-1][dhandler->buffer[target].column-1], str, strlen(str));
+  }
+
+  return 0;
+}
+
+
+int display_handler_write_to(display_handler_t *dhandler,
+			     int row, int column, char *str)
+{
+  int ret = -1;
+
+  if (!dhandler)
+    return ret;
+
+  if (display_handler_go_to(dhandler, row, column) == 0) {
+    ret = display_handler_write(dhandler, str);
+  }
+  return ret;
+}
+
+
+int display_handler_go_to(display_handler_t *dhandler, int row, int column)
+{
+  int ret = 0;
+
+  if (row < 1 || row > 4 || column < 1 || column > 20)
+    return -1;
+
+  char *cmd = NULL;
+
+  if (dhandler->write_targets & DISPLAY_TARGET_SCREEN) {
+    if (asprintf(&cmd, LKCMD_SET_POS, row, column) < 0)
+      ret = -1;
+  }
+
+  // TODO: buf loop
+  if (dhandler->write_targets & DISPLAY_TARGET_BUF1) {
+    dhandler->buffer[0].row = row;
+    dhandler->buffer[0].column = column;
+  }
+
+  return ret;
+}
+
+
+
+void display_handler_dump_buffer(display_handler_t *dhandler, int page)
+{
+  if (page < 0 || page > 1) {
+    DBG("Error");
+  } else {
+    DBG("+--------------------+");
+    DBG("|%s|", dhandler->buffer[page].data[0]);
+    DBG("|%s|", dhandler->buffer[page].data[1]);
+    DBG("|%s|", dhandler->buffer[page].data[2]);
+    DBG("|%s|", dhandler->buffer[page].data[3]);
+    DBG("+--------------------+");
+  }
+}
+
+/*
+************************************************************
+*                                                          *
+*                        KEYPAD                            *
+*                                                          *
+************************************************************
+*/
 
 /*
 *** Keypad local routines ***
@@ -121,5 +252,3 @@ int keypad_handler_key_is_up(char key)
 { return -1; }
 
 
-
-#endif

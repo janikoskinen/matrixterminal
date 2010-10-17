@@ -36,10 +36,10 @@ int main (int argc, char **argv)
   struct ev_loop *loop = NULL;
   ev_signal sigint_watcher;
 
-  //display_handler_t *dhandler;
+  display_handler_t *dhandler;
   keypad_handler_t *khandler;
 
-  //int display_fd = STDOUT_FILENO;
+  int display_fd = STDOUT_FILENO;
   int keypad_fd = STDIN_FILENO;
 
   // Get opts
@@ -53,12 +53,16 @@ int main (int argc, char **argv)
     return -1;
 
   // Set handlers
-  //dhandler = display_handler_init(loop, display_fd);
+  dhandler = display_handler_init(loop, display_fd);
   khandler = keypad_handler_init(loop, keypad_fd);
-  if (/*!dhandler ||*/ !khandler)
+  if (!dhandler || !khandler)
     return 1;
 
   keypad_handler_set_key_received_callback(khandler, key_received_cb);
+
+  display_handler_set_write_target(dhandler, DISPLAY_TARGET_BUF1);
+  display_handler_write_to(dhandler, 1, 3, "MatrixTerminal2");
+  display_handler_dump_buffer(dhandler, 0);
 
   // ev_signal
   ev_signal_init(&sigint_watcher, sigint_cb, SIGINT);

@@ -6,5 +6,6 @@
 #define KEY_LEFT 
 #define KEY_RIGHT 
 
+#define LKCMD_SET_POS "\xfe\47%d%d"
 
 #endif
