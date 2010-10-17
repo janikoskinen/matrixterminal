@@ -24,6 +24,15 @@ static void set_nonblock(int fd) {
     DBG("Error when setting fd %d to nonblock mode", fd);
 }
 
+static int min(int a, int b)
+{
+  if (a > b)
+    return b;
+  else
+    return a;
+}
+
+
 
 /*
 ************************************************************
@@ -102,11 +111,28 @@ int display_handler_write(display_handler_t *dhandler, char *str)
   }
 
   // Buffers here, TODO: in loop
-  if ((dhandler->write_targets >> (target+1)) & 1) {
-    // TODO: line wrap
-    memcpy(&dhandler->buffer[target].data[dhandler->buffer[target].row-1][dhandler->buffer[target].column-1], str, strlen(str));
-  }
 
+  if ((dhandler->write_targets >> (target+1)) & 1) {
+    int str_pos = 0;
+    int str_len = strlen(str);
+    int to_write = 0;
+
+    while (str_pos < str_len) {
+      to_write = min((str_len-str_pos), 21-dhandler->buffer[target].column);
+
+      memcpy(&dhandler->buffer[target].data[dhandler->buffer[target].row-1][dhandler->buffer[target].column-1], &str[str_pos], to_write);
+
+      str_pos += to_write;
+      dhandler->buffer[target].column += to_write;
+
+      if (dhandler->buffer[target].column > 20) {
+	dhandler->buffer[target].column = 1;
+	dhandler->buffer[target].row++;
+      }
+      if (dhandler->buffer[target].row > 4)
+	dhandler->buffer[target].row = 1;
+    }
+  }
   return 0;
 }
 
@@ -162,6 +188,9 @@ void display_handler_dump_buffer(display_handler_t *dhandler, int page)
     DBG("|%s|", dhandler->buffer[page].data[2]);
     DBG("|%s|", dhandler->buffer[page].data[3]);
     DBG("+--------------------+");
+    DBG("Row: %d, col: %d",
+	dhandler->buffer[page].row,
+	dhandler->buffer[page].column);
   }
 }
 

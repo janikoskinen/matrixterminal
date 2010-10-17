@@ -62,6 +62,8 @@ int main (int argc, char **argv)
 
   display_handler_set_write_target(dhandler, DISPLAY_TARGET_BUF1);
   display_handler_write_to(dhandler, 1, 3, "MatrixTerminal2");
+
+  display_handler_write_to(dhandler, 2, 11, "Testing long string line wrap functionality.");
   display_handler_dump_buffer(dhandler, 0);
 
   // ev_signal
