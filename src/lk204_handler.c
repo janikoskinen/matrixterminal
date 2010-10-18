@@ -2,6 +2,7 @@
 #define _GNU_SOURCE
 
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,12 @@
 #include "display_handler.h"
 #include "keypad_handler.h"
 
+
+/* TODO list
+   - all buffer operation to loop
+   - page aomunt can be specified (in init)
+
+*/
 
 
 /* General functions */
@@ -33,11 +40,64 @@ static int min(int a, int b)
 }
 
 
+static int write_to_lk(int fd, const char *cmd, ...)
+{
+  char *cmdstr = NULL;
+  va_list ap;
+  int r, w;
+
+  va_start(ap, cmd);
+  r = vasprintf(&cmdstr, cmd, ap);
+  va_end(ap);
+
+  if (r < 0)
+    return -1;
+
+  // TODO: to ev_write ?
+  w = 0;
+  while (w < strlen(cmdstr)) {
+    w += write(fd, &cmdstr[w], strlen(cmdstr)-w);
+  }
+  return 0;
+}
+
+
+static void display_scroller_cb(struct ev_loop *l, ev_timer *w, int revents)
+{
+  char *tmp = NULL;
+  struct display_scroller *ds = (struct display_scroller *)w;
+
+  tmp = malloc(ds->width+1);
+  if (tmp) {
+    if (ds->width > strlen(&ds->text[ds->pos])) { // Do in one or two parts
+      int w = sprintf(tmp, "%s", &ds->text[ds->pos]);
+      snprintf(&tmp[w], ds->width-w+1, "%s", ds->text);
+    } else {
+      if (snprintf(tmp, ds->width+1, "%s", &ds->text[ds->pos]) < 0)
+	goto out;
+    }
+
+    if (display_handler_write_to(ds->dhandler, ds->row, ds->column, tmp) == 0)
+      ds->pos++;
+  } else {
+    DBG("Memory error when scrolling!");
+  }
+
+  if (ds->pos > strlen(ds->text))
+    ds->pos -= strlen(ds->text);
+
+  display_handler_dump_buffer(ds->dhandler, 0);
+
+ out:
+  if (tmp)
+    free(tmp);
+}
+
 
 /*
 ************************************************************
 *                                                          *
-*                       DISPLAY                            *
+*                       Display                            *
 *                                                          *
 ************************************************************
 */
@@ -65,8 +125,12 @@ display_handler_t *display_handler_init(struct ev_loop *loop, int disp_fd)
 
   set_nonblock(disp_fd);
   dh->disp_fd = disp_fd;
-  dh->scrollers = NULL;
   dh->loop = loop;
+  for (i = 0 ; i < DISPLAY_MAX_SCROLLERS ; i++) {
+    dh->scrollers[i].dhandler = dh;
+    dh->scrollers[i].text = NULL;
+    dh->scrollers[i].running = 0;
+  }
 
   dh->write_targets = DISPLAY_TARGET_BUF1;
   dh->gpo_value = 0;
@@ -88,11 +152,11 @@ void display_handler_close(display_handler_t *dhandler)
 
 
 int display_handler_set_write_target(display_handler_t *dhandler,
-				     int targets) {
-  if (targets < 0 || targets > 7)
+				     int targets_mask) {
+  if (targets_mask < 0 || targets_mask > 7)
     return -1;
   else {
-    dhandler->write_targets = targets;
+    dhandler->write_targets = targets_mask;
     return 0;
   }
 }
@@ -105,13 +169,12 @@ int display_handler_write(display_handler_t *dhandler, char *str)
   if (!dhandler)
     return -1;
 
-  // Write to screen -> Not supported (TODO)
+  // Write to screen
   if (dhandler->write_targets & DISPLAY_TARGET_SCREEN) {
-    return -2;
+    write_to_lk(dhandler->disp_fd, str);
   }
 
   // Buffers here, TODO: in loop
-
   if ((dhandler->write_targets >> (target+1)) & 1) {
     int str_pos = 0;
     int str_len = strlen(str);
@@ -156,14 +219,14 @@ int display_handler_go_to(display_handler_t *dhandler, int row, int column)
 {
   int ret = 0;
 
+  if (!dhandler)
+    return -1;
+
   if (row < 1 || row > 4 || column < 1 || column > 20)
     return -1;
 
-  char *cmd = NULL;
-
   if (dhandler->write_targets & DISPLAY_TARGET_SCREEN) {
-    if (asprintf(&cmd, LKCMD_SET_POS, row, column) < 0)
-      ret = -1;
+    ret |= write_to_lk(dhandler->disp_fd, LKCMD_SET_POS, row, column);
   }
 
   // TODO: buf loop
@@ -174,6 +237,174 @@ int display_handler_go_to(display_handler_t *dhandler, int row, int column)
 
   return ret;
 }
+
+
+int display_handler_go_home(display_handler_t *dhandler)
+{
+  return display_handler_go_to(dhandler, 1, 1);
+}
+
+
+int display_handler_clear_display(display_handler_t *dhandler)
+{
+  int ret = 0;
+
+  if (!dhandler)
+    return -1;
+
+  if (dhandler->write_targets & DISPLAY_TARGET_SCREEN) {
+    ret = write_to_lk(dhandler->disp_fd, LKCMD_CLR_SRC);
+  }
+
+  if (dhandler->write_targets & DISPLAY_TARGET_BUF1) {
+    for (int i = 1 ; i <= 4 ; i++)
+      ret |= display_handler_clear_line(dhandler, i);
+    ret |= display_handler_go_home(dhandler);
+  }
+
+  if (ret != 0)
+    return -1;
+  return 0;
+}
+
+
+int display_handler_clear_line(display_handler_t *dhandler, int row)
+{
+  int ret = 0;
+
+  if (!dhandler)
+    return -1;
+
+  ret |= display_handler_go_to(dhandler, row, 1);
+  ret |= display_handler_write(dhandler, "                    ");
+
+  if (ret != 0)
+    return -1;
+  return 0;
+}
+
+
+int display_handler_scroller_init(display_handler_t *dhandler,
+				  int scroller,
+				  int row,
+				  int column,
+				  int width,
+				  char *scroll_text,
+				  int interval_msecs)
+{
+  float repeat_time = 0.0;
+
+  if (!dhandler || scroller < 0 || scroller > DISPLAY_MAX_SCROLLERS)
+    return -1;
+
+  // TODO: check params
+  if ((strlen(scroll_text) < width) ||
+      (row < 1 || row > 4 || column < 1 || column > 20) ||
+      (width < 1 || interval_msecs < 10))
+    return 1;
+
+  if (dhandler->scrollers[scroller].running)
+    display_handler_scroller_close(dhandler, scroller);
+
+  repeat_time = interval_msecs / 1000.0;
+  dhandler->scrollers[scroller].pos = 0;
+  dhandler->scrollers[scroller].row = row;
+  dhandler->scrollers[scroller].column = column;
+  dhandler->scrollers[scroller].width = width;
+  dhandler->scrollers[scroller].running = 0;
+  dhandler->scrollers[scroller].text = strdup(scroll_text);
+  ev_timer_init(&dhandler->scrollers[scroller].watcher,
+		display_scroller_cb, 0, repeat_time);
+  return 0;
+}
+
+
+int display_handler_scroller_close(display_handler_t *dhandler, int scroller)
+{
+  if (!dhandler || scroller < 0 || scroller > DISPLAY_MAX_SCROLLERS)
+    return -1;
+
+  if (dhandler->scrollers[scroller].running) {
+    display_handler_scroller_stop(dhandler, scroller);
+
+    if (dhandler->scrollers[scroller].text) {
+      free(dhandler->scrollers[scroller].text);
+      dhandler->scrollers[scroller].text = NULL;
+    }
+  }
+  return 0;
+}
+
+
+int display_handler_scroller_start(display_handler_t *dhandler, int scroller)
+{
+  if (!dhandler || scroller < 0 || scroller > DISPLAY_MAX_SCROLLERS)
+    return -1;
+
+  if (dhandler->scrollers[scroller].text == NULL ||
+      dhandler->scrollers[scroller].running != 0)
+    return -1;
+
+  ev_timer_start(dhandler->loop, &dhandler->scrollers[scroller].watcher);
+  return 0;
+}
+
+
+int display_handler_scroller_stop(display_handler_t *dhandler, int scroller)
+{
+  if (!dhandler || scroller < 0 || scroller > DISPLAY_MAX_SCROLLERS)
+    return -1;
+
+  if (dhandler->scrollers[scroller].text == NULL ||
+      dhandler->scrollers[scroller].running == 0)
+    return -1;
+
+  ev_timer_stop(dhandler->loop, &dhandler->scrollers[scroller].watcher);
+  return 0;
+}
+
+
+int display_handler_write_gpo(display_handler_t *dhandler, int new_gpo_value)
+{
+  int ret = 0;
+
+  if (!dhandler)
+    return -1;
+
+  if (dhandler->write_targets & DISPLAY_TARGET_SCREEN) {
+    dhandler->gpo_value = new_gpo_value;
+    for (int i = 0 ; i < 6 ; i++) {
+      if ((new_gpo_value >> i) & 1)
+	ret |= display_handler_set_gpo(dhandler, i+1);
+      else
+	ret |= display_handler_reset_gpo(dhandler, i+1);
+    }
+    if (ret)
+      return -1;
+  } else {
+    return -1;
+  }
+  return 0;
+}
+
+
+int display_handler_set_gpo(display_handler_t *dhandler, int ngpo)
+{
+  if (!dhandler || ngpo < 1 || ngpo > 6)
+    return -1;
+
+  return write_to_lk(dhandler->disp_fd, LKCMD_GPO_ON, ngpo);
+}
+
+
+int display_handler_reset_gpo(display_handler_t *dhandler, int ngpo)
+{
+  if (!dhandler || ngpo < 1 || ngpo > 6)
+    return -1;
+
+  return write_to_lk(dhandler->disp_fd, LKCMD_GPO_OFF, ngpo);
+}
+
 
 
 

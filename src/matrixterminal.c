@@ -66,6 +66,12 @@ int main (int argc, char **argv)
   display_handler_write_to(dhandler, 2, 11, "Testing long string line wrap functionality.");
   display_handler_dump_buffer(dhandler, 0);
 
+  display_handler_clear_line(dhandler, 3);
+  display_handler_dump_buffer(dhandler, 0);
+
+  display_handler_scroller_init(dhandler, 0, 3, 3, 8, "Scroller text 1234567890", 200);
+  display_handler_scroller_start(dhandler, 0);
+
   // ev_signal
   ev_signal_init(&sigint_watcher, sigint_cb, SIGINT);
   ev_signal_start(loop, &sigint_watcher);
