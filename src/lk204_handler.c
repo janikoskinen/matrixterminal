@@ -134,6 +134,7 @@ display_handler_t *display_handler_init(struct ev_loop *loop, int disp_fd)
 
   dh->write_targets = DISPLAY_TARGET_BUF1;
   dh->gpo_value = 0;
+  dh->bars_initialized = DISPLAY_BARS_NONE;
 
   // Clear buffers;
   for (i = 0 ; i < 4 ; i++)
@@ -405,6 +406,67 @@ int display_handler_reset_gpo(display_handler_t *dhandler, int ngpo)
   return write_to_lk(dhandler->disp_fd, LKCMD_GPO_OFF, ngpo);
 }
 
+
+int display_handler_use_bars(display_handler_t *dhandler, int type)
+{
+  int ret = -1;
+
+  if (!dhandler || type < 0 || type > 4)
+    return -1;
+
+  switch (type) {
+  case DISPLAY_BARS_HRIGHT:
+  case DISPLAY_BARS_HLEFT:
+    ret = write_to_lk(dhandler->disp_fd, LKCMD_HBAR_INIT);
+    break;
+  case DISPLAY_BARS_VTHICK:
+    ret = write_to_lk(dhandler->disp_fd, LKCMD_VBAR_INIT);
+    break;
+  case DISPLAY_BARS_VTHIN:
+    ret = write_to_lk(dhandler->disp_fd, LKCMD_VBAR2_INIT);
+    break;
+  default:
+    break;
+  }
+  dhandler->bars_initialized = type;
+
+  return ret;
+}
+
+
+int display_handler_draw_bar_horizontal(display_handler_t *dhandler,
+					int row, int column, int length)
+{
+  if (!dhandler || row < 1 || row > 4 || column < 1 || column > 20
+      || length < 0 || length > 20)
+    return -1;
+
+  if (dhandler->bars_initialized != DISPLAY_BARS_HLEFT &&
+      dhandler->bars_initialized != DISPLAY_BARS_HRIGHT)
+    display_handler_use_bars(dhandler, DISPLAY_BARS_H);
+
+  if (dhandler->bars_initialized == DISPLAY_BARS_HRIGHT)
+    return write_to_lk(dhandler->disp_fd,
+		       LKCMD_HBAR_DRAW, column, row, 0, length);
+  else
+    return write_to_lk(dhandler->disp_fd,
+		       LKCMD_HBAR_DRAW, column, row, 1, length);
+  return 0;
+}
+
+
+int display_handler_draw_bar_vertical(display_handler_t *dhandler,
+				      int column, int height)
+{
+  if (!dhandler || column < 1 || column > 20 || height < 0 || height > 20)
+    return -1;
+
+  if (dhandler->bars_initialized != DISPLAY_BARS_V &&
+      dhandler->bars_initialized != DISPLAY_BARS_VTHIN)
+    display_handler_use_bars(dhandler, DISPLAY_BARS_V);
+
+  return write_to_lk(dhandler->disp_fd, LKCMD_VBAR_DRAW, column, height);
+}
 
 
 

@@ -28,8 +28,8 @@
 #define LKCMD_CURSOR_UNDER_ON  "\xfe\x4a"
 #define LKCMD_CURSOR_UNDER_OFF "\xfe\x4b"
 
-#define LKCMD_VBAR_INIT  "\xfe\x73"
-#define LKCMD_VBAR2_INIT "\xfe\x76"
+#define LKCMD_VBAR_INIT  "\xfe\x76"
+#define LKCMD_VBAR2_INIT "\xfe\x73"
 #define LKCMD_HBAR_INIT  "\xfe\x68"
 #define LKCMD_VBAR_DRAW  "\xfe\x3d%d%d" // Col (1-20), Length (0-20)
 #define LKCMD_HBAR_DRAW  "\xfe\x7c%d%d%d%d" // Col (1-20),
