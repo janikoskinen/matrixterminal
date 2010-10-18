@@ -69,8 +69,12 @@ int main (int argc, char **argv)
   display_handler_clear_line(dhandler, 3);
   display_handler_dump_buffer(dhandler, 0);
 
-  display_handler_scroller_init(dhandler, 0, 3, 3, 8, "Scroller text 1234567890", 200);
+  display_handler_scroller_init(dhandler, 0, 3, 2, 8,
+				"Scroller text 1234567890  ", 200);
+  display_handler_scroller_init(dhandler, 1, 4, 3, 14,
+				"Slight slower scroller for last row. ", 500);
   display_handler_scroller_start(dhandler, 0);
+  display_handler_scroller_start(dhandler, 1);
 
   // ev_signal
   ev_signal_init(&sigint_watcher, sigint_cb, SIGINT);
