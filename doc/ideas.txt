@@ -2,9 +2,10 @@
 *************************
 displayer_api
 
-General displayer function declarations etc.
-Specialized displayers implement those
-
+- General displayer function declarations etc.
+ - Start/Stop/Activate
+- Specialized displayers implement those
+- Only one can be activated at once and only that one can write to display.
 
 *** Key listener:
 *****************
@@ -20,10 +21,10 @@ keypad_handler.h
 
 display_handler.h
 
-- display write
-- scrollers
-- gpo
-
+x- display write
+x- scrollers
+x- gpo
+- menu/list -> ui / look-and-feel ??
 
 *** General:
 ************
