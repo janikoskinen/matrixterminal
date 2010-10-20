@@ -304,7 +304,6 @@ int display_handler_scroller_init(display_handler_t *dhandler,
   if (!dhandler || scroller < 0 || scroller > DISPLAY_MAX_SCROLLERS)
     return -1;
 
-  // TODO: check params
   if ((strlen(scroll_text) < width) ||
       (row < 1 || row > 4 || column < 1 || column > 20) ||
       (width < 1 || interval_msecs < 10))
@@ -496,7 +495,7 @@ void display_handler_dump_buffer(display_handler_t *dhandler, int page)
 /*
 ************************************************************
 *                                                          *
-*                        KEYPAD                            *
+*                        Keypad                            *
 *                                                          *
 ************************************************************
 */
@@ -519,7 +518,7 @@ static void device_read_cb(struct ev_loop *l, ev_io *w, int revents)
 
   if (count == 1) {
     if (kh->key_callback)
-      kh->key_callback(kh, key);
+      kh->key_callback(kh, key, 0);
   } else {
     DBG("Read error");
   }

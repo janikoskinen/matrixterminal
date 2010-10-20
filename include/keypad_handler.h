@@ -2,10 +2,12 @@
 #define _KEYPAD_HANDLER_H
 
 
+#include "mt2lk_defs.h"
+
 typedef struct keypad_handler keypad_handler_t;
 
-typedef void (*key_received_callback_t) (keypad_handler_t *,
-					 char);
+typedef void (*key_received_callback_t) (keypad_handler_t *dhandler,
+					 char key, int downtime);
 
 
 struct keypad_handler {

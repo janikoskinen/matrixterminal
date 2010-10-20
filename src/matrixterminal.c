@@ -14,7 +14,7 @@
 
 /* CALLBACK FUNCTIONS */
 
-static void key_received_cb(keypad_handler_t *kh, char key)
+static void key_received_cb(keypad_handler_t *kh, char key, int downtime)
 {
   DBG("Got key '%c'", key);
 }
