@@ -6,6 +6,8 @@ displayer_api
  - Start/Stop/Activate
 - Specialized displayers implement those
 - Only one can be activated at once and only that one can write to display.
+- Later displayers to dynamic libraries
+
 
 *** Key listener:
 *****************
