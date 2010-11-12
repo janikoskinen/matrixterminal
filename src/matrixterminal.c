@@ -1,11 +1,14 @@
 
 #include <ev.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #define DEBUG
 
 #include "debug.h"
+
+#include "displayer_api.h"
 
 #include "display_handler.h"
 #include "keypad_handler.h"
@@ -47,6 +50,15 @@ int main (int argc, char **argv)
 
   // Load configuration
 
+
+  // Set displayers
+  displayer_t* displayers[3];
+
+  displayers[0] = malloc(sizeof(displayer_t));
+  displayers[1] = NULL;
+  displayers[2] = NULL;
+
+
   /* *** Set ev */
   loop = ev_default_loop(0);
   if (!loop)
@@ -83,6 +95,12 @@ int main (int argc, char **argv)
   DBG("Beginning loop");
 
   ev_loop(loop, 0);
+
+  // Free stuff
+
+  displayer_close(displayers[0]);
+  displayer_close(displayers[1]);
+  displayer_close(displayers[2]);
 
   return 0;
 }
