@@ -2,7 +2,7 @@
 #define _KEYPAD_HANDLER_H
 
 
-#include "mt2lk_defs.h"
+#include "mtlk_defs.h"
 
 typedef struct keypad_handler keypad_handler_t;
 
