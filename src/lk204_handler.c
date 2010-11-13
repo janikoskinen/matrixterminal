@@ -11,7 +11,7 @@
 #define DEBUG
 #include "debug.h"
 
-#include "mt2lk_defs.h"
+#include "mtlk_defs.h"
 #include "display_handler.h"
 #include "keypad_handler.h"
 

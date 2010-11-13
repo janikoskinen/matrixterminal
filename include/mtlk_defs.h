@@ -1,31 +1,34 @@
 #ifndef _MT2LK_DEFS_H
 #define _MT2LK_DEFS_H
 
-/* Key definitions */
 
-#define LKKEY_UP 
-#define LKKEY_DOWN 
-#define LKKEY_LEFT 
-#define LKKEY_RIGHT 
+#include "lk204_25_key_def.h"
 
-#define LKKEY_0
-#define LKKEY_1
-#define LKKEY_2
-#define LKKEY_3
-#define LKKEY_4
-#define LKKEY_5
-#define LKKEY_6
-#define LKKEY_7
-#define LKKEY_8
-#define LKKEY_9
+/* *** Key definitions *** */
 
-#define LKKEY_ENTER
-#define LKKEY_BACK
+#define MTKEY_UP 
+#define MTKEY_DOWN 
+#define MTKEY_LEFT 
+#define MTKEY_RIGHT 
 
-#define LKKEY_A
-#define LKKEY_B
-#define LKKEY_C
-#define LKKEY_D
+#define MTKEY_0
+#define MTKEY_1
+#define MTKEY_2
+#define MTKEY_3
+#define MTKEY_4
+#define MTKEY_5
+#define MTKEY_6
+#define MTKEY_7
+#define MTKEY_8
+#define MTKEY_9
+
+#define MTKEY_ENTER
+#define MTKEY_BACK
+
+#define MTKEY_A
+#define MTKEY_B
+#define MTKEY_C
+#define MTKEY_D
 
 
 
