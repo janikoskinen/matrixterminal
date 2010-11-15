@@ -6,7 +6,7 @@
 
 typedef struct keypad_handler keypad_handler_t;
 
-typedef void (*key_received_callback_t) (keypad_handler_t *dhandler,
+typedef void (*key_received_callback_t) (keypad_handler_t *khandler,
 					 char key, int downtime);
 
 
