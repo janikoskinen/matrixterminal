@@ -54,10 +54,11 @@ int main (int argc, char **argv)
   // Set displayers
   displayer_t* displayers[3];
 
-  displayers[0] = malloc(sizeof(displayer_t));
+  displayers[0] = displayer_create("test");
   displayers[1] = NULL;
   displayers[2] = NULL;
 
+  printf("Disp[0] = %ld\n", (long)displayers[0]);
 
   /* *** Set ev */
   loop = ev_default_loop(0);
@@ -81,12 +82,14 @@ int main (int argc, char **argv)
   display_handler_clear_line(dhandler, 3);
   display_handler_dump_buffer(dhandler, 0);
 
+  /*
   display_handler_scroller_init(dhandler, 0, 3, 2, 8,
 				"Scroller text 1234567890  ", 200);
   display_handler_scroller_init(dhandler, 1, 4, 3, 14,
 				"Slight slower scroller for last row. ", 500);
   display_handler_scroller_start(dhandler, 0);
   display_handler_scroller_start(dhandler, 1);
+  */
 
   // ev_signal
   ev_signal_init(&sigint_watcher, sigint_cb, SIGINT);
