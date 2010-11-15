@@ -1,9 +1,14 @@
 CC=gcc
+
 CFLAGS=-c -std=c99 -Wall -Werror -Iinclude -I../commons/include
-LDFLAGS=-lev
+LDFLAGS=-Ldisplayers -lev -ldl $(LIB_DISPLAYERS)
+
+LIB_DISPLAYERS=-lmtdisplayer_test
 
 COMMONS = ../commons/socket-handler.o ../commons/comm_lib.o
+
 SOURCES = src/matrixterminal.c src/lk204_handler.c src/displayer_commons.c
+
 OBJECTS = $(SOURCES:.c=.o)
 
 EXECUTABLE = matrixterminal2
