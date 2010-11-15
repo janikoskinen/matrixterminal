@@ -6,29 +6,32 @@
 
 /* *** Key definitions *** */
 
+#define MTKEY_0 KP_R4C2
+#define MTKEY_1 KP_R1C1
+#define MTKEY_2 KP_R1C2
+#define MTKEY_3 KP_R1C3
+#define MTKEY_4 KP_R2C1
+#define MTKEY_5 KP_R2C2
+#define MTKEY_6 KP_R2C3
+#define MTKEY_7 KP_R3C1
+#define MTKEY_8 KP_R3C2
+#define MTKEY_9 KP_R3C3
+#define MTKEY_STAR KP_R4C1
+#define MTKEY_HASH KP_R4C3
+
+#define MTKEY_A KP_R1C4
+#define MTKEY_B KP_R2C4
+#define MTKEY_C KP_R3C4
+#define MTKEY_D KP_R4C4
+
+
 #define MTKEY_UP 
 #define MTKEY_DOWN 
 #define MTKEY_LEFT 
 #define MTKEY_RIGHT 
 
-#define MTKEY_0
-#define MTKEY_1
-#define MTKEY_2
-#define MTKEY_3
-#define MTKEY_4
-#define MTKEY_5
-#define MTKEY_6
-#define MTKEY_7
-#define MTKEY_8
-#define MTKEY_9
-
 #define MTKEY_ENTER
 #define MTKEY_BACK
-
-#define MTKEY_A
-#define MTKEY_B
-#define MTKEY_C
-#define MTKEY_D
 
 
 
