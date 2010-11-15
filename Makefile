@@ -1,7 +1,7 @@
 CC=gcc
 
 CFLAGS=-c -std=c99 -Wall -Werror -Iinclude -I../commons/include
-LDFLAGS=-Ldisplayers -lev -ldl $(LIB_DISPLAYERS)
+LDFLAGS=-Ldisplayers -lev -ldl $(LIB_DISPLAYERS) -Wl,-R/usr/local/lib/matrixterminal
 
 LIB_DISPLAYERS=-lmtdisplayer_test
 
