@@ -31,13 +31,15 @@ struct displayer {
 
   ev_timer disp_watcher;
 
-  disp_oper displayer_operate_callback;
-  disp_key displayer_key_callback;
+  void *dl_handle; // Handler for lib
+
+  //disp_oper displayer_operate_callback;
+  //disp_key displayer_key_callback;
+
+  char *name; // Displayer name
+  void *data; // General data pointer to something
 };
 
-
-int displayer_start(displayer_t *);
-int displayer_stop(displayer_t *);
 
 
 /* Globally defined */
