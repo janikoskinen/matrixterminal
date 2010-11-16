@@ -519,7 +519,7 @@ static void device_read_cb(struct ev_loop *l, ev_io *w, int revents)
 
   if (count == 1) {
     if (kh->key_callback)
-      kh->key_callback(kh, key, 0);
+      kh->key_callback(kh, key);
   } else {
     DBG("Read error");
   }

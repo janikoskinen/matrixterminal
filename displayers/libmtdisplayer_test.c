@@ -13,10 +13,13 @@
 int displayer_initialize(displayer_t *disp);
 int displayer_start(displayer_t *disp);
 int displayer_stop(displayer_t *disp);
+int displayer_key_callback(displayer_t *disp, char key);
+
 
 struct test_disp_data {
   int counter;
 };
+
 
 static void test_runner(struct ev_loop *l, ev_timer *w, int revents)
 {
@@ -32,6 +35,8 @@ int displayer_initialize(displayer_t *disp)
   DBG("Initing test displayer");
   ev_timer_init(&disp->disp_watcher, test_runner, TIMER_TIME, TIMER_REPEAT);
 
+  if (disp->data)
+    free(disp->data);
   disp->data = malloc(sizeof(struct test_disp_data));
 
   if (!disp->data)

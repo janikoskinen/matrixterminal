@@ -38,7 +38,7 @@ static displayer_t *get_active_displayer(displayer_t **disps)
 
 /* CALLBACK FUNCTIONS */
 
-static void key_received_cb(keypad_handler_t *kh, char key, int downtime)
+static void key_received_cb(keypad_handler_t *kh, char key)
 {
   DBG("Got key '%c'", key);
 
@@ -50,13 +50,13 @@ static void key_received_cb(keypad_handler_t *kh, char key, int downtime)
       // Mt-keys
     } else {
       displayer_t *active = get_active_displayer(kh->key_callback_data);
-      if (!active)
-	DBG("No active displayer");
-      // Send key to active displayer after mt handling
+      if (active) {
+	// Send key to active displayer after mt handling
+	
+      }
     }
   }
 }
-
 
 
 static void sigint_cb(struct ev_loop *l, ev_signal *w, int revents)
