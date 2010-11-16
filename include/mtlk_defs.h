@@ -25,13 +25,15 @@
 #define MTKEY_D KP_R4C4
 
 
-#define MTKEY_UP 
-#define MTKEY_DOWN 
-#define MTKEY_LEFT 
-#define MTKEY_RIGHT 
+#define MTKEY_UP MTKEY_2
+#define MTKEY_DOWN MTKEY_8
+#define MTKEY_LEFT MTKEY_4
+#define MTKEY_RIGHT MTKEY_6
 
-#define MTKEY_ENTER
-#define MTKEY_BACK
+#define MTKEY_BACK MTKEY_C
+#define MTKEY_ENTER MTKEY_D
+
+#define MTKEY_MAINMENU MTKEY_A
 
 
 

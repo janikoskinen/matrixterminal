@@ -15,6 +15,7 @@ struct keypad_handler {
   struct ev_loop *loop;
   int dev_fd;
   key_received_callback_t key_callback;
+  void *key_callback_data;
 };
 
 
@@ -26,6 +27,7 @@ void keypad_handler_close(keypad_handler_t*);
 
 int keypad_handler_set_key_received_callback(keypad_handler_t *,
 					     key_received_callback_t);
+int keypad_handler_set_data(keypad_handler_t *, void *);
 
 int keypad_handler_get_column(char key);
 int keypad_handler_get_row(char key);

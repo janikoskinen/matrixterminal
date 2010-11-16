@@ -57,19 +57,21 @@ displayer_t *displayer_create(char *name, struct ev_loop* loop,
 
 int displayer_close(displayer_t *disp)
 {
+  int r;
+
   if (disp == NULL)
     return -1;
   else {
     if (displayer_is_running(disp))
       displayer_stop(disp);
     if (disp->dl_handle)
-      dlclose(disp->dl_handle);
+      r = dlclose(disp->dl_handle);
     if (disp->name)
       free(disp->name);
     if (disp->data)
       free(disp->data);
     free(disp);
-    return 0;
+    return r;
   }
 }
 
@@ -77,8 +79,8 @@ int displayer_close(displayer_t *disp)
 int displayer_activate(displayer_t *disp)
 {
   if (disp) {
-    disp->status &= !DISPLAYER_STATUS_ACTIVE;
-    DBG("Displayer status: %d", disp->status);
+    disp->status |= DISPLAYER_STATUS_ACTIVE;
+    DBG("Activate: Displayer (%ld) status: %d", (long)disp, disp->status);
     return 0;
   } else {
     return -1;
@@ -88,8 +90,8 @@ int displayer_activate(displayer_t *disp)
 int displayer_deactivate(displayer_t *disp)
 {
   if (disp) {
-    disp->status |= DISPLAYER_STATUS_ACTIVE;
-    DBG("Displayer status: %d", disp->status);
+    disp->status &= ~DISPLAYER_STATUS_ACTIVE;
+    DBG("Deactivate: Displayer (%ld) status: %d", (long)disp, disp->status);
     return 0;
   } else {
     return -1;
@@ -100,15 +102,33 @@ int displayer_deactivate(displayer_t *disp)
 int displayer_start(displayer_t *disp)
 {
   displayer_start_func func;
+  int r;
+  if (displayer_is_running(disp))
+    return -1;
+
   func = dlsym(disp->dl_handle, "displayer_start");
-  return (*func)(disp);
+  r = (*func)(disp);
+  if (r == 0)
+    disp->status |= DISPLAYER_STATUS_RUNNING;
+
+  DBG("Start: Displayer (%ld) status: %d", (long)disp, disp->status);
+  return r;
 }
 
 int displayer_stop(displayer_t *disp)
 {
   displayer_stop_func func;
+  int r;
+  if (!displayer_is_running(disp))
+    return -1;
+
   func = dlsym(disp->dl_handle, "displayer_stop");
-  return (*func)(disp);
+  r = (*func)(disp);
+  if (r == 0)
+    disp->status &= ~DISPLAYER_STATUS_RUNNING;
+
+  DBG("Stop: Displayer (%ld) status: %d", (long)disp, disp->status);
+  return r;
 }
 
 

@@ -14,12 +14,47 @@
 #include "keypad_handler.h"
 
 
+#define MAX_DISPLAYERS 3
+
+/* LOCAL FUNCTIONS */
+
+static void set_active_displayer(displayer_t **disps, displayer_t *active)
+{
+  for( int i = 0 ; i < MAX_DISPLAYERS-1 ; i++)
+    displayer_deactivate(disps[i]);
+  displayer_activate(active);
+}
+
+static displayer_t *get_active_displayer(displayer_t **disps)
+{
+  displayer_t *found = NULL;
+  for( int i = 0 ; i < MAX_DISPLAYERS-1 && !found ; i++) {
+    if (displayer_is_active(disps[i]))
+      found = disps[i];
+  }
+  return found;
+}
+
 
 /* CALLBACK FUNCTIONS */
 
 static void key_received_cb(keypad_handler_t *kh, char key, int downtime)
 {
   DBG("Got key '%c'", key);
+
+  if (key == MTKEY_MAINMENU) {
+    // Exclusive mt-keys (keys forbidden from displayers)
+    // Deactivate displayers and refresh main menu
+  } else {
+    if (0) {
+      // Mt-keys
+    } else {
+      displayer_t *active = get_active_displayer(kh->key_callback_data);
+      if (!active)
+	DBG("No active displayer");
+      // Send key to active displayer after mt handling
+    }
+  }
 }
 
 
@@ -45,6 +80,10 @@ int main (int argc, char **argv)
   int display_fd = STDOUT_FILENO;
   int keypad_fd = STDIN_FILENO;
 
+  display_handler_t *dhandlers[3];
+  displayer_t *displayers[3];
+
+
   // Get opts
 
 
@@ -62,6 +101,7 @@ int main (int argc, char **argv)
   if (!dhandler || !khandler)
     return 1;
 
+  // Set main key event handler
   keypad_handler_set_key_received_callback(khandler, key_received_cb);
 
   display_handler_set_write_target(dhandler, DISPLAY_TARGET_BUF1);
@@ -77,19 +117,20 @@ int main (int argc, char **argv)
 
 
   // Set displayers
-  displayer_t* displayers[3];
+  dhandlers[0] = display_handler_init(loop, display_fd);
+  dhandlers[1] = NULL;
+  dhandlers[2] = NULL;
 
-  displayers[0] = displayer_create("test", loop,
-				   display_handler_init(loop, display_fd),
-				   khandler);
+  displayers[0] = displayer_create("test", loop, dhandlers[0], khandler);
   displayers[1] = NULL;
   displayers[2] = NULL;
+  keypad_handler_set_data(khandler, displayers);
 
   DBG("Disp[0] = %ld", (long)displayers[0]);
 
   // Start displayers
   displayer_start(displayers[0]);
-
+  set_active_displayer(displayers, displayers[0]);
 
   DBG("Beginning loop");
 
@@ -98,9 +139,13 @@ int main (int argc, char **argv)
   // Free stuff
 
   DBG("Freeing stuff");
-  displayer_close(displayers[0]);
+  DBG("Close returned: %d", displayer_close(displayers[0]));
   displayer_close(displayers[1]);
   displayer_close(displayers[2]);
+  display_handler_close(dhandlers[0]);
+  display_handler_close(dhandlers[1]);
+  display_handler_close(dhandlers[2]);
+  keypad_handler_close(khandler);
 
   return 0;
 }

@@ -18,7 +18,7 @@
 
 /* TODO list
    - all buffer operation to loop
-   - page aomunt can be specified (in init)
+   - page amount can be specified (in init)
 
 */
 
@@ -154,6 +154,7 @@ void display_handler_close(display_handler_t *dhandler)
       if (dhandler->scrollers[i].text)
 	free(dhandler->scrollers[i].text);
     }
+    free(dhandler);
   }
 }
 
@@ -558,13 +559,38 @@ keypad_handler_t *keypad_handler_init(struct ev_loop *loop, int dev_fd)
 }
 
 
+void keypad_handler_close(keypad_handler_t *kh)
+{
+  if (kh) {
+    ev_io_stop(kh->loop, &kh->dev_watcher);
+    close(kh->dev_fd);
+    free(kh);
+  }
+}
+
+
 int keypad_handler_set_key_received_callback(keypad_handler_t *kh,
 					     key_received_callback_t callback)
 {
-  DBG("Setting callback");
-  kh->key_callback = callback;
+  if (kh) {
+    DBG("Setting callback");
+    kh->key_callback = callback;
+    return 0;
+  } else {
+    return -1;
+  }
+}
+
+
+int keypad_handler_set_data(keypad_handler_t *kh, void *data)
+{
+  if (!kh)
+    return -1;
+
+  kh->key_callback_data = data;
   return 0;
 }
+
 
 int keypad_handler_get_column(char key)
 { return -1; }
