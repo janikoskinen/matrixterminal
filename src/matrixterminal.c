@@ -51,15 +51,6 @@ int main (int argc, char **argv)
   // Load configuration
 
 
-  // Set displayers
-  displayer_t* displayers[3];
-
-  displayers[0] = displayer_create("test");
-  displayers[1] = NULL;
-  displayers[2] = NULL;
-
-  printf("Disp[0] = %ld\n", (long)displayers[0]);
-
   /* *** Set ev */
   loop = ev_default_loop(0);
   if (!loop)
@@ -76,24 +67,29 @@ int main (int argc, char **argv)
   display_handler_set_write_target(dhandler, DISPLAY_TARGET_BUF1);
   display_handler_write_to(dhandler, 1, 3, "MatrixTerminal2");
 
-  display_handler_write_to(dhandler, 2, 11, "Testing long string line wrap functionality.");
+  display_handler_write_to(dhandler, 3, 3, "Initializing...");
   display_handler_dump_buffer(dhandler, 0);
 
-  display_handler_clear_line(dhandler, 3);
-  display_handler_dump_buffer(dhandler, 0);
-
-  /*
-  display_handler_scroller_init(dhandler, 0, 3, 2, 8,
-				"Scroller text 1234567890  ", 200);
-  display_handler_scroller_init(dhandler, 1, 4, 3, 14,
-				"Slight slower scroller for last row. ", 500);
-  display_handler_scroller_start(dhandler, 0);
-  display_handler_scroller_start(dhandler, 1);
-  */
 
   // ev_signal
   ev_signal_init(&sigint_watcher, sigint_cb, SIGINT);
   ev_signal_start(loop, &sigint_watcher);
+
+
+  // Set displayers
+  displayer_t* displayers[3];
+
+  displayers[0] = displayer_create("test", loop,
+				   display_handler_init(loop, display_fd),
+				   khandler);
+  displayers[1] = NULL;
+  displayers[2] = NULL;
+
+  DBG("Disp[0] = %ld", (long)displayers[0]);
+
+  // Start displayers
+  displayer_start(displayers[0]);
+
 
   DBG("Beginning loop");
 
@@ -101,6 +97,7 @@ int main (int argc, char **argv)
 
   // Free stuff
 
+  DBG("Freeing stuff");
   displayer_close(displayers[0]);
   displayer_close(displayers[1]);
   displayer_close(displayers[2]);
