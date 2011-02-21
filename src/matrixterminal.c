@@ -42,8 +42,8 @@ static void key_received_cb(keypad_handler_t *kh, char key)
 {
   DBG("Got key '%c'", key);
 
+  // Check for exclusive mt-keys first (keys forbidden from displayers)
   if (key == MTKEY_MAINMENU) {
-    // Exclusive mt-keys (keys forbidden from displayers)
     // Deactivate displayers and refresh main menu
   } else {
     if (0) {
