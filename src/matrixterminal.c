@@ -121,7 +121,7 @@ int main (int argc, char **argv)
   dhandlers[1] = NULL;
   dhandlers[2] = NULL;
 
-  displayers[0] = displayer_create("foreca", loop, dhandlers[0], khandler);
+  displayers[0] = displayer_create("weather", loop, dhandlers[0], khandler);
   displayers[1] = NULL;
   displayers[2] = NULL;
   keypad_handler_set_data(khandler, displayers);
