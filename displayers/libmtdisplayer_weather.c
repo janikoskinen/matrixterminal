@@ -67,6 +67,7 @@ static struct forecast_data *parse_forecasts(char *data)
   char *a, *b;
   int i, day, tmp;
   struct forecast_data* fdata = NULL;
+  //  struct forecast_data* ftemp = NULL;
 
   a = strstr(data, "Turku\n\n10");
   if (!a)
@@ -80,6 +81,7 @@ static struct forecast_data *parse_forecasts(char *data)
   a = &a[10];
 
   for (day = 0 ; day < 1 ; day++) {
+
     DBG("Day %d:", day);
     // Day and cloud status
     a = strstr(a, "]") + 1;
@@ -117,7 +119,8 @@ static struct forecast_data *parse_forecasts(char *data)
   return fdata;
 
  error:
-    return NULL;
+  free_forecasts(fdata);
+  return NULL;
 }
 
 
