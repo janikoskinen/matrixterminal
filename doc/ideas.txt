@@ -31,4 +31,4 @@ x- gpo
 *** General:
 ************
 
-- 
+- client communication with sockets and json

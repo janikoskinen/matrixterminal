@@ -8,11 +8,14 @@
 
 #include "debug.h"
 
+#include "socket-handler.h"
+
 #include "displayer_api.h"
 
 #include "display_handler.h"
 #include "keypad_handler.h"
 
+#define DEF_PORT 6100
 
 #define MAX_DISPLAYERS 3
 
@@ -59,6 +62,27 @@ static void key_received_cb(keypad_handler_t *kh, char key)
 }
 
 
+static void connection_accepted_cb(socket_handler_t *sh, int fd)
+{
+  DBG("Remote connection accepted. FD: %d", fd);
+}
+
+
+static void message_received_cb(socket_handler_t *sh, int fd,
+				message_t *msg, void *cb_data)
+{
+  DBG("Message received from FD %d", fd);
+  DBG("  content: '%s'", msg->data);
+}
+
+
+static void message_sent_cb(socket_handler_t *sh, int fd,
+			    void *id, void *cb_data)
+{
+  DBG("Message sent to FD %d", fd);
+}
+
+
 static void sigint_cb(struct ev_loop *l, ev_signal *w, int revents)
 {
   DBG("\nSigInt received, exiting");
@@ -83,6 +107,7 @@ int main (int argc, char **argv)
   display_handler_t *dhandlers[3];
   displayer_t *displayers[3];
 
+  socket_handler_t shandler;
 
   // Get opts
 
@@ -128,6 +153,13 @@ int main (int argc, char **argv)
 
   DBG("Disp[0] = %ld", (long)displayers[0]);
 
+  // Set remote access
+  socket_handler_init(&shandler, loop);
+  socket_handler_start_listen_inet(&shandler, DEF_PORT,
+				   connection_accepted_cb,
+				   message_received_cb,
+				   message_sent_cb);
+
   // Start displayers
   displayer_start(displayers[0]);
   set_active_displayer(displayers, displayers[0]);
@@ -139,6 +171,7 @@ int main (int argc, char **argv)
   // Free stuff
 
   DBG("Freeing stuff");
+  socket_handler_stop_listen_inet(&shandler);
   DBG("Close returned: %d", displayer_close(displayers[0]));
   displayer_close(displayers[1]);
   displayer_close(displayers[2]);
