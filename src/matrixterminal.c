@@ -154,6 +154,7 @@ int main (int argc, char **argv)
   DBG("Disp[0] = %ld", (long)displayers[0]);
 
   // Set remote access
+  DBG("Starting remote access, listening to port %d.", DEF_PORT);
   socket_handler_init(&shandler, loop);
   socket_handler_start_listen_inet(&shandler, DEF_PORT,
 				   connection_accepted_cb,

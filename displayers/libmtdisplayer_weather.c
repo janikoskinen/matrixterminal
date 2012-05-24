@@ -12,7 +12,7 @@
 
 #include "debug.h"
 
-#define WEATHER_UPDATE_INTERVAL 10
+#define WEATHER_UPDATE_INTERVAL 30
 //#define WEATHER_FETCH_URL "http://printer.wunderground.com/cgi-bin/findweather/getForecast?query=turku"
 #define WEATHER_FETCH_URL "http://www.foreca.fi/Finland/Turku/tenday"
 #define WEATHER_READ_BYTES 1000
