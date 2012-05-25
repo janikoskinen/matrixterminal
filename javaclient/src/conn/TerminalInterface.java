@@ -12,8 +12,10 @@ public class TerminalInterface {
 	private PrintWriter out;
 	private BufferedReader in;
 
-	public TerminalInterface() {
+	public TerminalInterface(String ip, int port) {
 		sock = null;
+		connectTo(ip, port);
+		System.out.println("Connect ok");
 	}
 
 	public boolean connectTo(String ip, int port) {
@@ -21,16 +23,13 @@ public class TerminalInterface {
 			try {
 				sock.close();
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		}
 		try {
-			sock = new Socket("127.0.0.1", 6100);
+			sock = new Socket(ip, port);
 			out = new PrintWriter(sock.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-			sock.close();
-			sock = null;
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -39,21 +38,22 @@ public class TerminalInterface {
 	}
 
 	public void sendMessage(Message msg) {
-		if (sock != null) {
-			out.write(msg.toSendFormat());
-		}
+			String msgstring = msg.toSendFormat();
+			out.println(msgstring);
+			System.out.println("Message:\n"+msgstring+" sent");
 	}
 
-	public Message getMessage() {
+	/*public Message getMessage() {
 		return null;
-	}
+	}*/
 
 	public String getDisplayContent() {
-		
-		return null;
+		Message getdisp = new Message("Give screen data to me!");
+		sendMessage(getdisp);
+		return "ok";
 	}
 
-	public void sendKey() {
+	/*public void sendKey() {
 		
-	}
+	}*/
 }

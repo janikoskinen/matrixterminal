@@ -60,7 +60,7 @@ public class RemoteInterface extends JFrame implements ActionListener {
 			}
 		});
 
-		terminal = new TerminalInterface();
+		terminal = new TerminalInterface("192.168.1.2", 6100);
 
 	}
 
@@ -68,8 +68,8 @@ public class RemoteInterface extends JFrame implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("refresh")) {
-			terminal.connectTo("localhost", 6100);
-			terminal.sendMessage(new Message("Refresh needed"));
+			String content = terminal.getDisplayContent();
+			System.out.println("Disp:\n"+content);
 		}
 	}
 }
