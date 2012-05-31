@@ -15,7 +15,7 @@
 #define WEATHER_UPDATE_INTERVAL 30
 //#define WEATHER_FETCH_URL "http://printer.wunderground.com/cgi-bin/findweather/getForecast?query=turku"
 #define WEATHER_FETCH_URL "http://www.foreca.fi/Finland/Turku/tenday"
-#define WEATHER_READ_BYTES 1000
+#define WEATHER_READ_BYTES 5000
 
 #define READ 0
 #define WRITE 1
