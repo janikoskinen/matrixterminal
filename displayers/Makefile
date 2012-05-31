@@ -1,5 +1,6 @@
 CC=gcc
-CFLAGS=-fPIC -c -Wall -Werror -I../include -I../../commons/include
+COMMON=../../common-components/c
+CFLAGS=-fPIC -c -Wall -Werror -I../include -I$(COMMON)/include
 
 SOURCES = libmtdisplayer_test.c libmtdisplayer_weather.c
 OBJECTS = $(SOURCES:.c=.so)

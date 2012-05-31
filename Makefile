@@ -6,7 +6,7 @@ LDFLAGS=-Ldisplayers -rdynamic -lev -ldl $(LIB_DISPLAYERS) -Wl,-R/usr/local/lib/
 
 LIB_DISPLAYERS=-lmtdisplayer_test
 
-COMMONS = $(COMMON_DIR)/socket-handler.o $(COMMON_DIR)/comm_lib.o
+COMMONS = $(COMMON_DIR)/socket-handler.o $(COMMON_DIR)/comm_lib.o $(COMMON_DIR)/utils.o
 
 SOURCES = src/matrixterminal.c src/lk204_handler.c src/displayer_commons.c
 
