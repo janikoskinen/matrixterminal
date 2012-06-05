@@ -17,7 +17,7 @@ EXECUTABLE = matrixterminal2
 all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) $(COMMONS) -o $@
+	$(CC) $(OBJECTS) $(COMMONS) -o $@ $(LDFLAGS)
 
 %.o: %.cc
 	$(CC) $(CFLAGS) $< -o $@

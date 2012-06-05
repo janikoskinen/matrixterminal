@@ -149,7 +149,7 @@ display_handler_t *display_handler_init(struct ev_loop *loop, int disp_fd)
 void display_handler_close(display_handler_t *dhandler)
 {
   int i;
-  if (dhandler) {
+  if (dhandler != NULL) {
     for (i = 0 ; i < DISPLAY_MAX_SCROLLERS ; i++) {
       if (dhandler->scrollers[i].text)
 	free(dhandler->scrollers[i].text);

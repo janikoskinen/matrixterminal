@@ -47,6 +47,13 @@ int displayer_initialize(displayer_t *disp)
 }
 
 
+int displayer_deinitialize(displayer_t *disp)
+{
+  // Nothing to do
+  return 0;
+}
+
+
 int displayer_start(displayer_t *disp)
 {
   DBG("Start test displayer");

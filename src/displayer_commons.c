@@ -44,6 +44,9 @@ displayer_t *displayer_create(char *name, struct ev_loop* loop,
   init_func = dlsym(tmp->dl_handle, "displayer_initialize");
   (*init_func)(tmp);
 
+  if (filename != NULL)
+    free(filename);
+
   return tmp;
 
  error:
@@ -52,18 +55,24 @@ displayer_t *displayer_create(char *name, struct ev_loop* loop,
       free(tmp->name);
     free(tmp);
   }
+  if (filename)
+    free(filename);
+
   return NULL;
 }
 
 int displayer_close(displayer_t *disp)
 {
   int r;
+  displayer_deinit_func deinit_func;
 
   if (disp == NULL)
     return -1;
   else {
     if (displayer_is_running(disp))
       displayer_stop(disp);
+    deinit_func = dlsym(disp->dl_handle, "displayer_deinitialize");
+    (*deinit_func)(disp);
     if (disp->dl_handle)
       r = dlclose(disp->dl_handle);
     if (disp->name)

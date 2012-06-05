@@ -19,7 +19,8 @@
 
 typedef struct displayer displayer_t;
 
-typedef void (*displayer_init_func) (displayer_t *);
+typedef int (*displayer_init_func) (displayer_t *);
+typedef int (*displayer_deinit_func) (displayer_t *);
 typedef int (*displayer_start_func) (displayer_t *);
 typedef int (*displayer_stop_func) (displayer_t *);
 
@@ -47,6 +48,9 @@ displayer_t *displayer_create(char *name,
 			      display_handler_t *dhandler,
 			      keypad_handler_t *khandler);
 int displayer_close(displayer_t *disp);
+
+int displayer_initialize(displayer_t *);
+int displayer_deinitialize(displayer_t *);
 
 int displayer_start(displayer_t *);
 int displayer_stop(displayer_t *);
