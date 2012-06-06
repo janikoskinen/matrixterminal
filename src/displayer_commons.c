@@ -24,12 +24,12 @@ displayer_t *displayer_create(char *name, struct ev_loop* loop,
 
   memset(tmp, 0, sizeof(displayer_t));
   tmp->name = strdup(name);
-  tmp->loop = loop;
-
-  if (asprintf(&filename, "libmtdisplayer_%s.so", name) == -1)
+  if (tmp->name == NULL)
     goto error;
 
-  if (!tmp->name)
+  tmp->loop = loop;
+
+  if (asprintf(&filename, "libmtdisplayer_%s.so", tmp->name) == -1)
     goto error;
 
   DBG("Opening %s", filename);
