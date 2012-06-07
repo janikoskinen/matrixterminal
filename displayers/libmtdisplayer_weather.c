@@ -12,18 +12,15 @@
 
 #include "debug.h"
 
-#define WEATHER_UPDATE_INTERVAL 10
+#define WEATHER_UPDATE_INTERVAL 30
 //#define WEATHER_FETCH_URL "http://printer.wunderground.com/cgi-bin/findweather/getForecast?query=turku"
 #define WEATHER_FETCH_URL "http://www.foreca.fi/Finland/Turku/tenday"
-#define WEATHER_READ_BYTES 1000
+#define WEATHER_READ_BYTES 5000
 
 #define READ 0
 #define WRITE 1
 
 
-int displayer_initialize(displayer_t *disp);
-int displayer_start(displayer_t *disp);
-int displayer_stop(displayer_t *disp);
 int displayer_key_callback(displayer_t *disp, char key);
 
 
@@ -32,6 +29,7 @@ struct forecast_data {
   char wind_direction[3];
   int temperature_day;
   int temperature_night;
+  char *status;
   struct forecast_data *next;
 };
 
@@ -50,11 +48,48 @@ struct weather_data {
 
 static void free_forecasts(struct forecast_data *fdata)
 {
-  if (!fdata)
+  if (fdata == NULL)
     return;
 
   free_forecasts(fdata->next);
+  if (fdata->status != NULL)
+    free(fdata->status);
   free(fdata);
+}
+
+
+static struct forecast_data *alloc_forecast()
+{
+  struct forecast_data *fdata = malloc(sizeof(struct forecast_data));
+
+  if (fdata == NULL) {
+    DBG("Malloc error");
+    return NULL;
+  } else {
+    fdata->wind_amount = 0;
+    fdata->wind_direction[0] = ' ';
+    fdata->wind_direction[1] = ' ';
+    fdata->wind_direction[2] = '\0';
+    fdata->temperature_day = 0;
+    fdata->temperature_night = 0;
+    fdata->status = NULL;
+    fdata->next = NULL;
+    return fdata;
+  }
+}
+
+
+static void forecast_debug_print(struct forecast_data *fdata)
+{
+  DBG("Forecast data (%ld):", (long)fdata);
+  if (fdata != NULL) {
+    DBG(" Status: %s", fdata->status);
+    DBG(" DayTmp: %d", fdata->temperature_day);
+    DBG(" NgtTmp: %d", fdata->temperature_night);
+    DBG(" WndAmn: %d", fdata->wind_amount);
+    DBG(" WndDir: %s", fdata->wind_direction);
+    DBG("   Next: %ld", (long)fdata->next);
+  }
 }
 
 
@@ -65,20 +100,59 @@ static struct forecast_data *parse_forecasts(char *data)
   //DBG("*** End of data ***");
 
   char *a, *b;
-  int i, day, tmp;
+  int datacount = strlen(data);
+  //DBG("Datacount: %d", datacount);
+  int day, tmp;
   struct forecast_data* fdata = NULL;
   //  struct forecast_data* ftemp = NULL;
 
-  a = strstr(data, "Turku\n\n10");
-  if (!a)
-    goto error;
-  a = strstr(a, " ennuste");
-  if (!a)
-    goto error;
+  // Check for errors
+  int errors = 0;
+  if (strstr(data, "Execvp exited") != NULL) {
+    if (strstr(data, "No such file") != NULL)
+      errors = 1;
+  }
+  if (strstr(data, "Unable to") != NULL &&
+      strstr(data, "remote host") != NULL) {
+    errors = 2;
+  }
 
-  i = 0;
+  if (datacount < 512) {
+    switch(errors) {
+    case 1:
+      DBG("Not enough data and Execvp exited: Lynx installed??");
+      goto error;
+    case 2:
+      DBG("Cannot find server");
+      goto error;
+    default:
+      DBG("Little data received without apparent reason!");
+      break;
+    }
+  }
+
+  if (errors == 0) {
+    a = strstr(data, "Turku\n\n10");
+    if (a == NULL) {
+      errors = 4;
+      goto error;
+    }
+    a = strstr(a, " ennuste");
+    if (a == NULL) {
+      errors = 4;
+      goto error;
+    }
+  }
+
   DBG("Valid data received");
   a = &a[10];
+
+  fdata = alloc_forecast();
+  if (fdata == NULL) {
+    errors = 8;
+    DBG("Could not allocate memory for forecast data");
+    goto error;
+  }
 
   for (day = 0 ; day < 1 ; day++) {
 
@@ -87,6 +161,12 @@ static struct forecast_data *parse_forecasts(char *data)
     a = strstr(a, "]") + 1;
     b = strstr(&a[1], "\n");
     *b = '\0';
+    fdata->status = malloc(strlen(a)+1);
+    if (fdata->status == NULL) {
+      DBG("Malloc error when allocing status string");
+    } else {
+      strcpy(fdata->status, a);
+    }
     DBG("Status: %s", a);
 
     // Day temperature
@@ -95,6 +175,7 @@ static struct forecast_data *parse_forecasts(char *data)
     *b = '\0';
     tmp = strtol(a, NULL, 10);
     b = strstr(&b[1], "\n");
+    fdata->temperature_day = tmp;
     DBG("Day temp: %d", tmp);
 
     // Night temperature
@@ -103,18 +184,27 @@ static struct forecast_data *parse_forecasts(char *data)
     *b = '\0';
     tmp = strtol(a, NULL, 10);
     b = strstr(&b[1], "\n");
+    fdata->temperature_night = tmp;
     DBG("Ngt temp: %d", tmp);
 
     // Wind
-    a = &b[5];
+    a = skip_whites(&b[1], 20);
+    //a = &b[4];
     b = strstr(&a[1], " ");
     *b = '\0';
+    fdata->wind_direction[0] = a[0];
+    fdata->wind_direction[1] = a[1];
+    fdata->wind_direction[2] = '\0';
     DBG("Wind dir: %s", a);
     a = &b[1];
     b = strstr(&a[1], " ");
     *b = '\0';
-    DBG("Wind amt: %s", a);
+    tmp = strtol(a, NULL, 10);
+    fdata->wind_amount = tmp;
+    DBG("Wind amt: %d", tmp);
   }
+
+  forecast_debug_print(fdata);
 
   return fdata;
 
@@ -134,14 +224,14 @@ static void weather_raw_read(struct ev_loop *l, ev_io *w, int revents)
   struct weather_raw_data *raw = (struct weather_raw_data *)w;
 
   ev_io_stop(l, w);
-  DBG("In raw_read, fd=%d", w->fd);
+  //DBG("In raw_read, fd=%d", w->fd);
 
   rdata[WEATHER_READ_BYTES] = 0;
 
-  DBG("Reading %d bytes...", WEATHER_READ_BYTES);
+  //DBG("Reading %d bytes...", WEATHER_READ_BYTES);
 
   r = read(w->fd, rdata, WEATHER_READ_BYTES);
-  DBG("  got: %d", r);
+  //DBG("  got: %d", r);
 
   if (r > 0) {
     ptr = realloc(raw->data, raw->len+r+1);
@@ -206,7 +296,7 @@ static void weather_updater(struct ev_loop *l, ev_timer *w, int revents)
     close(piperead[READ]);
     close(piperead[WRITE]);
 
-    //DBG("Child executing");
+    DBG("Child executing");
     execvp(cmd[0], cmd);
     DBG("Execvp exited, (%s), exiting...", strerror(errno));
     exit(0);
@@ -219,13 +309,13 @@ static void weather_updater(struct ev_loop *l, ev_timer *w, int revents)
       data->raw_data.len = 0;
     }
 
-    //DBG("Starting io_watcher for raw read");
+    DBG("Starting io_watcher for raw read");
     ev_io_init(&data->raw_data.data_fetcher, weather_raw_read,
 	       piperead[READ], EV_READ);
     sleep(1);
     ev_io_start(l, &data->raw_data.data_fetcher);
   } else { // Error
-
+    DBG("Error in fork!");
   }
 
   ev_timer_start(l, w);
@@ -248,6 +338,20 @@ int displayer_initialize(displayer_t *disp)
   bzero(disp->data, sizeof(struct weather_data));
 
   ((struct weather_data*)(disp->data))->disp = disp;
+  return 0;
+}
+
+
+int displayer_deinitialize(displayer_t *disp)
+{
+  if (disp->data) {
+    struct weather_data *tmp = (struct weather_data*)disp->data;
+    if (tmp->raw_data.data != NULL) {
+      DBG("Free rawdata string");
+      free(tmp->raw_data.data);
+      tmp->raw_data.data = NULL;
+    }
+  }
   return 0;
 }
 

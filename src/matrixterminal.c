@@ -6,7 +6,8 @@
 
 #define DEBUG
 
-#include "debug.h"
+#include "logger.h"
+//#include "debug.h"
 
 #include "socket-handler.h"
 
@@ -98,14 +99,14 @@ int main (int argc, char **argv)
   struct ev_loop *loop = NULL;
   ev_signal sigint_watcher;
 
-  display_handler_t *dhandler;
-  keypad_handler_t *khandler;
+  display_handler_t *dhandler = NULL;
+  keypad_handler_t *khandler = NULL;
 
   int display_fd = STDOUT_FILENO;
   int keypad_fd = STDIN_FILENO;
 
-  display_handler_t *dhandlers[3];
-  displayer_t *displayers[3];
+  display_handler_t *dhandlers[3] = {NULL, NULL, NULL};
+  displayer_t *displayers[3] = {NULL, NULL, NULL};
 
   socket_handler_t shandler;
 
@@ -135,11 +136,9 @@ int main (int argc, char **argv)
   display_handler_write_to(dhandler, 3, 3, "Initializing...");
   display_handler_dump_buffer(dhandler, 0);
 
-
   // ev_signal
   ev_signal_init(&sigint_watcher, sigint_cb, SIGINT);
   ev_signal_start(loop, &sigint_watcher);
-
 
   // Set displayers
   dhandlers[0] = display_handler_init(loop, display_fd);
@@ -147,14 +146,18 @@ int main (int argc, char **argv)
   dhandlers[2] = NULL;
 
   displayers[0] = displayer_create("weather", loop, dhandlers[0], khandler);
+  //displayers[0] = displayer_create("test", loop, dhandlers[0], khandler);
   displayers[1] = NULL;
   displayers[2] = NULL;
+
   keypad_handler_set_data(khandler, displayers);
 
   DBG("Disp[0] = %ld", (long)displayers[0]);
 
   // Set remote access
+  DBG("Starting remote access, listening to port %d.", DEF_PORT);
   socket_handler_init(&shandler, loop);
+
   socket_handler_start_listen_inet(&shandler, DEF_PORT,
 				   connection_accepted_cb,
 				   message_received_cb,
@@ -178,6 +181,7 @@ int main (int argc, char **argv)
   display_handler_close(dhandlers[0]);
   display_handler_close(dhandlers[1]);
   display_handler_close(dhandlers[2]);
+  display_handler_close(dhandler);
   keypad_handler_close(khandler);
 
   return 0;
