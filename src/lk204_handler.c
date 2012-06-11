@@ -44,7 +44,8 @@ static int write_to_lk(int fd, const char *cmd, ...)
 {
   char *cmdstr = NULL;
   va_list ap;
-  int r, w;
+  int r = 0;
+  int w = 0;
 
   va_start(ap, cmd);
   r = vasprintf(&cmdstr, cmd, ap);
@@ -148,7 +149,7 @@ display_handler_t *display_handler_init(struct ev_loop *loop, int disp_fd)
 
 void display_handler_close(display_handler_t *dhandler)
 {
-  int i;
+  int i = 0;
   if (dhandler != NULL) {
     for (i = 0 ; i < DISPLAY_MAX_SCROLLERS ; i++) {
       if (dhandler->scrollers[i].text) {
@@ -511,8 +512,8 @@ void display_handler_dump_buffer(display_handler_t *dhandler, int page)
 
 static void device_read_cb(struct ev_loop *l, ev_io *w, int revents)
 {
-  int count;
-  char key;
+  int count = 0;
+  char key = '\0';
 
   ev_io_stop(l, w);
 

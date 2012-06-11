@@ -15,7 +15,7 @@ displayer_t *displayer_create(char *name, struct ev_loop* loop,
 			      display_handler_t *dhandler,
 			      keypad_handler_t *khandler)
 {
-  char *filename;
+  char *filename = NULL;
   displayer_init_func init_func;
   displayer_t *tmp = malloc(sizeof(displayer_t));
 
@@ -63,7 +63,7 @@ displayer_t *displayer_create(char *name, struct ev_loop* loop,
 
 int displayer_close(displayer_t *disp)
 {
-  int r;
+  int r = -1;
   displayer_deinit_func deinit_func;
 
   if (disp == NULL)
