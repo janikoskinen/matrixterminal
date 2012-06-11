@@ -68,7 +68,7 @@ static struct forecast_data *alloc_forecast()
   } else {
     fdata->wind_amount = 0;
     fdata->wind_direction[0] = ' ';
-    fdata->wind_direction[1] = ' ';
+    fdata->wind_direction[1] = '\0';
     fdata->wind_direction[2] = '\0';
     fdata->temperature_day = 0;
     fdata->temperature_night = 0;
@@ -81,7 +81,7 @@ static struct forecast_data *alloc_forecast()
 
 static void forecast_debug_print(struct forecast_data *fdata)
 {
-  DBG("Forecast data (%ld):", (long)fdata);
+  DBG("*** Forecast data (%ld):", (long)fdata);
   if (fdata != NULL) {
     DBG(" Status: %s", fdata->status);
     DBG(" DayTmp: %d", fdata->temperature_day);
@@ -89,6 +89,10 @@ static void forecast_debug_print(struct forecast_data *fdata)
     DBG(" WndAmn: %d", fdata->wind_amount);
     DBG(" WndDir: %s", fdata->wind_direction);
     DBG("   Next: %ld", (long)fdata->next);
+    if (fdata->next != NULL) {
+      DBG(" ** Next: **");
+      forecast_debug_print(fdata->next);
+    }
   }
 }
 
@@ -104,7 +108,7 @@ static struct forecast_data *parse_forecasts(char *data)
   //DBG("Datacount: %d", datacount);
   int day, tmp;
   struct forecast_data* fdata = NULL;
-  //  struct forecast_data* ftemp = NULL;
+  struct forecast_data* ftemp = NULL;
 
   // Check for errors
   int errors = 0;
@@ -147,61 +151,75 @@ static struct forecast_data *parse_forecasts(char *data)
   DBG("Valid data received");
   a = &a[10];
 
-  fdata = alloc_forecast();
-  if (fdata == NULL) {
-    errors = 8;
-    DBG("Could not allocate memory for forecast data");
-    goto error;
-  }
+  struct forecast_data *prev = NULL;
 
-  for (day = 0 ; day < 1 ; day++) {
+  for (day = 0 ; day < 5 ; day++) {
+    ftemp = alloc_forecast();
+    if (ftemp == NULL) {
+      errors = 8;
+      DBG("Could not allocate memory for forecast data");
+      goto error;
+    }
 
     DBG("Day %d:", day);
     // Day and cloud status
     a = strstr(a, "]") + 1;
     b = strstr(&a[1], "\n");
     *b = '\0';
-    fdata->status = malloc(strlen(a)+1);
-    if (fdata->status == NULL) {
+    ftemp->status = malloc(strlen(a)+1);
+    if (ftemp->status == NULL) {
       DBG("Malloc error when allocing status string");
     } else {
-      strcpy(fdata->status, a);
+      DBG("Replaced %d x ä", str_replace(a, '\xe4', 'ä'));
+      DBG("Replaced %d x ö", str_replace(a, '\xf6', 'ö'));
+      strcpy(ftemp->status, a);
     }
     DBG("Status: %s", a);
 
     // Day temperature
-    a = &b[13];
-    b = strstr(&a[1], "\xc2");
+    a = &b[8];
+    a = strstr(a, ":") + 1;
+    b = strstr(&a[1], "\n");
     *b = '\0';
     tmp = strtol(a, NULL, 10);
-    b = strstr(&b[1], "\n");
-    fdata->temperature_day = tmp;
+    //b = strstr(&b[1], "\n");
+    ftemp->temperature_day = tmp;
     DBG("Day temp: %d", tmp);
 
     // Night temperature
-    a = &b[9];
-    b = strstr(&a[1], "\xc2");
+    a = &b[3];
+    a = strstr(a, ":") + 1;
+    b = strstr(&a[1], "\n");
     *b = '\0';
     tmp = strtol(a, NULL, 10);
-    b = strstr(&b[1], "\n");
-    fdata->temperature_night = tmp;
+    //b = strstr(&b[1], "\n");
+    ftemp->temperature_night = tmp;
     DBG("Ngt temp: %d", tmp);
 
     // Wind
     a = skip_whites(&b[1], 20);
-    //a = &b[4];
     b = strstr(&a[1], " ");
     *b = '\0';
-    fdata->wind_direction[0] = a[0];
-    fdata->wind_direction[1] = a[1];
-    fdata->wind_direction[2] = '\0';
+    ftemp->wind_direction[0] = a[0];
+    ftemp->wind_direction[1] = a[1];
+    ftemp->wind_direction[2] = '\0';
     DBG("Wind dir: %s", a);
     a = &b[1];
     b = strstr(&a[1], " ");
     *b = '\0';
     tmp = strtol(a, NULL, 10);
-    fdata->wind_amount = tmp;
+    ftemp->wind_amount = tmp;
     DBG("Wind amt: %d", tmp);
+
+    if (prev == NULL) {
+      fdata = ftemp;
+      prev = ftemp;
+    } else {
+      prev->next = ftemp;
+      prev = ftemp;
+    }
+
+    a = &b[1];
   }
 
   forecast_debug_print(fdata);
@@ -211,6 +229,27 @@ static struct forecast_data *parse_forecasts(char *data)
  error:
   free_forecasts(fdata);
   return NULL;
+}
+
+
+static void update_screen_data(display_handler_t *dh,
+			       struct weather_data *wdata)
+{
+  char *tmp = alloca(21);
+  snprintf(tmp, 20, "Temp (D/N): %d/%d",
+	   wdata->forecasts->temperature_day,
+	   wdata->forecasts->temperature_night);
+  display_handler_write_to(dh, 3, 1, tmp);
+  snprintf(tmp, 20, "Wind: %d m/s from %s",
+	   wdata->forecasts->wind_amount,
+	   wdata->forecasts->wind_direction);
+  display_handler_write_to(dh, 4, 1, tmp);
+  display_handler_scroller_close(dh, 0);
+  int len = strlen(wdata->forecasts->status)+21;
+  char *stmp = alloca(len);
+  snprintf(stmp, len-1, "    %s               ", wdata->forecasts->status);
+  display_handler_scroller_init(dh, 0, 2, 1, 20, stmp, 250);
+  display_handler_scroller_start(dh, 0);
 }
 
 
@@ -255,6 +294,8 @@ static void weather_raw_read(struct ev_loop *l, ev_io *w, int revents)
 	if (wdata->forecasts)
 	  free_forecasts(wdata->forecasts);
 	wdata->forecasts = fdata;
+	update_screen_data(wdata->disp->dhandler, wdata);
+	display_handler_dump_buffer(wdata->disp->dhandler, 0);
       }
     } else {
       DBG("Error: %s", strerror(errno));
@@ -287,11 +328,12 @@ static void weather_updater(struct ev_loop *l, ev_timer *w, int revents)
   pid = fork();
 
   if (pid == 0) { // Child
-    char *cmd[4];
+    char *cmd[5];
     cmd[0] = "lynx";
     cmd[1] = "-dump";
-    cmd[2] = WEATHER_FETCH_URL;
-    cmd[3] = NULL;
+    cmd[2] = "-display_charset=ISO-8859-1";
+    cmd[3] = WEATHER_FETCH_URL;
+    cmd[4] = NULL;
     dup2(piperead[WRITE], STDOUT_FILENO);
     close(piperead[READ]);
     close(piperead[WRITE]);
@@ -366,6 +408,10 @@ int displayer_start(displayer_t *disp)
     ev_timer_start(disp->loop, &disp->disp_watcher);
     DBG("Setting status");
     disp->status |= DISPLAYER_STATUS_RUNNING;
+
+    display_handler_clear_display(disp->dhandler);
+    display_handler_write_to(disp->dhandler, 1, 3, "** * FORECA * **");
+    //display_handler_write_to(disp->dhandler, 2, 1, "Stat:");
     return 0;
   }
 }
