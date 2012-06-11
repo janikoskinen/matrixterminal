@@ -151,8 +151,12 @@ void display_handler_close(display_handler_t *dhandler)
   int i;
   if (dhandler != NULL) {
     for (i = 0 ; i < DISPLAY_MAX_SCROLLERS ; i++) {
-      if (dhandler->scrollers[i].text)
+      if (dhandler->scrollers[i].text) {
+	//DBG("Scroller text found. Freeing...");
 	free(dhandler->scrollers[i].text);
+	dhandler->scrollers[i].text = NULL;
+	dhandler->scrollers[i].running = 0;
+      }
     }
     free(dhandler);
   }
