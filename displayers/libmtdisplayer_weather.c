@@ -48,10 +48,14 @@ struct weather_data {
 
 static void free_forecasts(struct forecast_data *fdata)
 {
+  DBG("Told to free forecast (%ld)", (long)fdata);
   if (fdata == NULL)
     return;
 
+  // Free next
   free_forecasts(fdata->next);
+
+  // Free this
   if (fdata->status != NULL)
     free(fdata->status);
   free(fdata);
@@ -66,6 +70,7 @@ static struct forecast_data *alloc_forecast()
     DBG("Malloc error");
     return NULL;
   } else {
+    DBG("...allocated %d bytes for %ld", sizeof(struct forecast_data), (long)fdata);
     fdata->wind_amount = 0;
     fdata->wind_direction[0] = ' ';
     fdata->wind_direction[1] = '\0';
@@ -386,8 +391,13 @@ int displayer_initialize(displayer_t *disp)
 
 int displayer_deinitialize(displayer_t *disp)
 {
+  DBG("Weather deinitialize()");
   if (disp->data) {
     struct weather_data *tmp = (struct weather_data*)disp->data;
+    if (tmp->forecasts != NULL) {
+      free_forecasts(tmp->forecasts);
+      tmp->forecasts = NULL;
+    }
     if (tmp->raw_data.data != NULL) {
       DBG("Free rawdata string");
       free(tmp->raw_data.data);
