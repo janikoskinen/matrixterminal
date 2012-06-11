@@ -3,7 +3,7 @@
 displayer_api
 
 - General displayer function declarations etc.
- - Start/Stop/Activate
+ - Start/Stop/Activate/Deactivate/Initialize/Deinitialize
 - Specialized displayers implement those
 - Only one can be activated at once and only that one can write to display.
 - Later displayers to dynamic libraries
@@ -28,7 +28,9 @@ x- scrollers
 x- gpo
 - menu/list -> ui / look-and-feel ??
 
+
 *** General:
 ************
 
 - client communication with sockets and json
+- message structin käyttö
