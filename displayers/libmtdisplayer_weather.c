@@ -108,7 +108,8 @@ static struct forecast_data *parse_forecasts(char *data)
   //DBG("Data received ****:\n%s", data);
   //DBG("*** End of data ***");
 
-  char *a, *b;
+  char *a = NULL;
+  char *b = NULL;
   int datacount = strlen(data);
   //DBG("Datacount: %d", datacount);
   int day, tmp;
@@ -260,11 +261,11 @@ static void update_screen_data(display_handler_t *dh,
 
 static void weather_raw_read(struct ev_loop *l, ev_io *w, int revents)
 {
-  struct forecast_data *fdata;
-  struct weather_data *wdata;
+  struct forecast_data *fdata = NULL;
+  struct weather_data *wdata = NULL;
   char rdata[WEATHER_READ_BYTES+1];
-  int r;
-  char *ptr;
+  int r = 0;
+  char *ptr = NULL;
   struct weather_raw_data *raw = (struct weather_raw_data *)w;
 
   ev_io_stop(l, w);
