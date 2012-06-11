@@ -26,7 +26,11 @@ static void test_runner(struct ev_loop *l, ev_timer *w, int revents)
   displayer_t* disp = (displayer_t *)w;
   struct test_disp_data *data = (struct test_disp_data*)disp->data;
   data->counter++;
+  char* tmp = alloca(10);
+  snprintf(tmp, 9, "%d", data->counter);
+  display_handler_write_to(disp->dhandler, 4, 2, tmp);
   DBG("Test timer: %d", data->counter);
+  display_handler_dump_buffer(disp->dhandler, 0);
 }
 
 
