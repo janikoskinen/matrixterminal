@@ -6,16 +6,24 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import data.javson.JSONObject;
+
 public class TerminalInterface {
 
 	private Socket sock;
-	private PrintWriter out;
-	private BufferedReader in;
+	private PrintWriter sockout;
+	private BufferedReader sockin;
+
+	private String ip;
+	private int port;
 
 	public TerminalInterface(String ip, int port) {
 		sock = null;
-		connectTo(ip, port);
-		System.out.println("Connect ok");
+		this.ip = ip;
+		this.port = port;
+
+		boolean retval = connectTo(ip, port);
+		System.out.println("Connect returned "+retval);
 	}
 
 	public boolean connectTo(String ip, int port) {
@@ -23,24 +31,55 @@ public class TerminalInterface {
 			try {
 				sock.close();
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				//e1.printStackTrace();
 			}
 		}
 		try {
 			sock = new Socket(ip, port);
-			out = new PrintWriter(sock.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			sockout = new PrintWriter(sock.getOutputStream(), true);
+			sockin = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 			return true;
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			sock = null;
+			sockout = null;
+			sockin = null;
 		}
 		return false;
 	}
 
+	public boolean reconnect() {
+		return connectTo(ip, port);
+	}
+
 	public void sendMessage(Message msg) {
-			String msgstring = msg.toSendFormat();
-			out.println(msgstring);
+		String msgstring = msg.toSendFormat();
+		if (sock != null && sockout != null) {
+			sockout.println(msgstring);
 			System.out.println("Message:\n"+msgstring+" sent");
+		} else {
+			System.out.println("No connection, not sent");
+		}
+	}
+
+	public String readAll() {
+		if (sock != null && sockin != null) {
+			String retstr = "";
+			String str = "";
+			do {
+				try {
+					str = sockin.readLine();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+				if (str != null)
+					retstr += str;
+			} while (str != null);
+			return "";
+		} else {
+			System.out.println("No connection, nothing read");
+			return null;
+		}
 	}
 
 	/*public Message getMessage() {
@@ -48,9 +87,14 @@ public class TerminalInterface {
 	}*/
 
 	public String getDisplayContent() {
-		Message getdisp = new Message("Give screen data to me!");
+		JSONObject jmsg = new JSONObject("command", "request");
+		jmsg.addItem(new JSONObject("parameter", "screen"));
+		
+		Message getdisp = new Message(jmsg.format(true));
 		sendMessage(getdisp);
-		return "ok";
+		String ret = readAll();
+		
+		return ret;
 	}
 
 	/*public void sendKey() {

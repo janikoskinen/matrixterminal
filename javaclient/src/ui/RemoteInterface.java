@@ -9,6 +9,7 @@ import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SpringLayout;
@@ -19,11 +20,14 @@ import conn.TerminalInterface;
 
 public class RemoteInterface extends JFrame implements ActionListener {
 
+	private final String StatusStr = "Status: ";
+
 	private SpringLayout layout;
 
 	private JTextArea txtDisplay;
 	private NumericPad btnNumpad;
 	private JButton btnRefresh;
+	private JLabel lblStatus;
 
 	private TerminalInterface terminal;
 
@@ -34,6 +38,8 @@ public class RemoteInterface extends JFrame implements ActionListener {
 		txtDisplay = new JTextArea();
 		txtDisplay.setSize(130, 40);
 		//display.setFont();
+
+		lblStatus = new JLabel(StatusStr + "not connected");
 
 		btnNumpad = new NumericPad(10);
 		btnNumpad.setActionListener(this);
