@@ -2,7 +2,7 @@ CC=gcc
 COMMON_DIR=../common-components/c
 
 CFLAGS=-c -std=c99 -Wall -Werror -Iinclude -I$(COMMON_DIR)/include
-LDFLAGS=-Ldisplayers -rdynamic -lev -ldl $(LIB_DISPLAYERS) -Wl,-R/usr/local/lib/matrixterminal
+LDFLAGS=-Ldisplayers -rdynamic -lev -ljansson -ldl $(LIB_DISPLAYERS) -Wl,-R/usr/local/lib/matrixterminal
 
 LIB_DISPLAYERS=-lmtdisplayer_test
 

@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <jansson.h>
+
 #define DEBUG
 
 #include "logger.h"
@@ -113,6 +115,43 @@ static void message_received_cb(socket_handler_t *sh, int fd,
 {
   DBG("Message received from FD %d", fd);
   DBG("  content: '%s'", msg->data);
+
+  // Verify json
+  const char *cmdstr = NULL;
+  json_t *cmd = NULL;
+  json_t *jroot = json_loads(msg->data, 0, NULL);
+
+  if (jroot == NULL) {
+    DBG("No JSON received");
+  } else {
+    DBG("Valid JSON received");
+    cmd = json_object_get(jroot, "command");
+    cmdstr = json_string_value(cmd);
+    DBG(" Command: '%s'", cmdstr);
+
+    if (strcmp(cmdstr, "request") == 0) {
+      json_t *item = json_object_get(jroot, "parameter");
+      if (item != NULL) {
+	const char *itemstr = json_string_value(item);
+	if (strcmp(itemstr, "screen") == 0) {
+	  message_t *msg = message_create_from("{\"result\": \"ok\", \"screen\": \" * FORECA * \"}");
+	  socket_handler_reply_message(sh, fd, msg);
+	} else {
+	  DBG("Unknown request");
+	  message_t *msg = message_create_response_error("Unknown request");
+	  socket_handler_reply_message(sh, fd, msg);
+	}
+      }
+    } else if (strcmp(cmdstr, "key") == 0) {
+      DBG("Key-commands not yet supported");
+      message_t *msg = message_create_response_error("Key-commands not yet supported");
+      socket_handler_reply_message(sh, fd, msg);
+    } else {
+      DBG("Command not recognized");
+    }
+    json_decref(jroot);
+  }
+
 }
 
 
