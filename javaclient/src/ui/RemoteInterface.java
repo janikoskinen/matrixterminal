@@ -9,6 +9,7 @@ import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SpringLayout;
@@ -19,11 +20,14 @@ import conn.TerminalInterface;
 
 public class RemoteInterface extends JFrame implements ActionListener {
 
+	private final String StatusStr = "Status: ";
+
 	private SpringLayout layout;
 
 	private JTextArea txtDisplay;
 	private NumericPad btnNumpad;
 	private JButton btnRefresh;
+	private JLabel lblStatus;
 
 	private TerminalInterface terminal;
 
@@ -34,6 +38,8 @@ public class RemoteInterface extends JFrame implements ActionListener {
 		txtDisplay = new JTextArea();
 		txtDisplay.setSize(130, 40);
 		//display.setFont();
+
+		lblStatus = new JLabel(StatusStr + "not connected");
 
 		btnNumpad = new NumericPad(10);
 		btnNumpad.setActionListener(this);
@@ -60,7 +66,7 @@ public class RemoteInterface extends JFrame implements ActionListener {
 			}
 		});
 
-		terminal = new TerminalInterface();
+		terminal = new TerminalInterface("192.168.1.2", 6100);
 
 	}
 
@@ -68,8 +74,8 @@ public class RemoteInterface extends JFrame implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("refresh")) {
-			terminal.connectTo("localhost", 6100);
-			terminal.sendMessage(new Message("Refresh needed"));
+			String content = terminal.getDisplayContent();
+			System.out.println("Disp:\n"+content);
 		}
 	}
 }

@@ -15,6 +15,8 @@ public class Message {
 	}
 
 	public String toSendFormat() {
-		return String.format("%.8x\n%s", data.length(), data);
+		if (data != null)
+			return String.format("%08x\n%s", data.length(), data);
+		else return "";
 	}
 }
