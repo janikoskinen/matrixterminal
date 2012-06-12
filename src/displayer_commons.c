@@ -15,7 +15,7 @@ displayer_t *displayer_create(char *name, struct ev_loop* loop,
 			      display_handler_t *dhandler,
 			      keypad_handler_t *khandler)
 {
-  char *filename;
+  char *filename = NULL;
   displayer_init_func init_func;
   displayer_t *tmp = malloc(sizeof(displayer_t));
 
@@ -24,12 +24,12 @@ displayer_t *displayer_create(char *name, struct ev_loop* loop,
 
   memset(tmp, 0, sizeof(displayer_t));
   tmp->name = strdup(name);
-  tmp->loop = loop;
-
-  if (asprintf(&filename, "libmtdisplayer_%s.so", name) == -1)
+  if (tmp->name == NULL)
     goto error;
 
-  if (!tmp->name)
+  tmp->loop = loop;
+
+  if (asprintf(&filename, "libmtdisplayer_%s.so", tmp->name) == -1)
     goto error;
 
   DBG("Opening %s", filename);
@@ -63,7 +63,7 @@ displayer_t *displayer_create(char *name, struct ev_loop* loop,
 
 int displayer_close(displayer_t *disp)
 {
-  int r;
+  int r = -1;
   displayer_deinit_func deinit_func;
 
   if (disp == NULL)

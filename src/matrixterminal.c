@@ -20,6 +20,45 @@
 
 #define MAX_DISPLAYERS 3
 
+
+/* STRUCTS */
+
+struct matrixterminal_data {
+  display_handler_t *dhandler;
+  keypad_handler_t *khandler;
+};
+
+
+static struct matrixterminal_data *mt_data_alloc()
+{
+  struct matrixterminal_data *tmp = malloc(sizeof(struct matrixterminal_data));
+  if (tmp == NULL) {
+    DBG("Mt_data malloc failed");
+    return NULL;
+  } else {
+    tmp->dhandler = NULL;
+    tmp->khandler = NULL;
+    return tmp;
+  }
+}
+
+
+static void mt_data_free(struct matrixterminal_data *mt_data)
+{
+  if (mt_data != NULL) {
+    if (mt_data->dhandler != NULL) {
+      display_handler_close(mt_data->dhandler);
+      mt_data->dhandler = NULL;
+    }
+    if (mt_data->khandler != NULL) {
+      keypad_handler_close(mt_data->khandler);
+      mt_data->khandler = NULL;
+    }
+    free(mt_data);
+  }
+}
+
+
 /* LOCAL FUNCTIONS */
 
 static void set_active_displayer(displayer_t **disps, displayer_t *active)
@@ -99,12 +138,19 @@ int main (int argc, char **argv)
   struct ev_loop *loop = NULL;
   ev_signal sigint_watcher;
 
-  display_handler_t *dhandler = NULL;
-  keypad_handler_t *khandler = NULL;
+  // DisplayHandler for MT
+  //display_handler_t *dhandler = NULL;
+  //keypad_handler_t *khandler = NULL;
+
+  // Struct for MT stuff
+  struct matrixterminal_data *mt_data = mt_data_alloc();
+  if (mt_data == NULL)
+    goto out;
 
   int display_fd = STDOUT_FILENO;
   int keypad_fd = STDIN_FILENO;
 
+  // Handlers for displayers
   display_handler_t *dhandlers[3] = {NULL, NULL, NULL};
   displayer_t *displayers[3] = {NULL, NULL, NULL};
 
@@ -122,19 +168,19 @@ int main (int argc, char **argv)
     return -1;
 
   // Set handlers
-  dhandler = display_handler_init(loop, display_fd);
-  khandler = keypad_handler_init(loop, keypad_fd);
-  if (!dhandler || !khandler)
+  mt_data->dhandler = display_handler_init(loop, display_fd);
+  mt_data->khandler = keypad_handler_init(loop, keypad_fd);
+  if (mt_data->dhandler == NULL || mt_data->khandler == NULL)
     return 1;
 
   // Set main key event handler
-  keypad_handler_set_key_received_callback(khandler, key_received_cb);
+  keypad_handler_set_key_received_callback(mt_data->khandler, key_received_cb);
 
-  display_handler_set_write_target(dhandler, DISPLAY_TARGET_BUF1);
-  display_handler_write_to(dhandler, 1, 3, "MatrixTerminal2");
+  display_handler_set_write_target(mt_data->dhandler, DISPLAY_TARGET_BUF1);
+  display_handler_write_to(mt_data->dhandler, 1, 3, "MatrixTerminal2");
 
-  display_handler_write_to(dhandler, 3, 3, "Initializing...");
-  display_handler_dump_buffer(dhandler, 0);
+  display_handler_write_to(mt_data->dhandler, 3, 3, "Initializing...");
+  display_handler_dump_buffer(mt_data->dhandler, 0);
 
   // ev_signal
   ev_signal_init(&sigint_watcher, sigint_cb, SIGINT);
@@ -145,12 +191,12 @@ int main (int argc, char **argv)
   dhandlers[1] = NULL;
   dhandlers[2] = NULL;
 
-  displayers[0] = displayer_create("weather", loop, dhandlers[0], khandler);
-  //displayers[0] = displayer_create("test", loop, dhandlers[0], khandler);
+  displayers[0] = displayer_create("weather", loop, dhandlers[0], mt_data->khandler);
+  //  displayers[0] = displayer_create("test", loop, dhandlers[0], mt_data->khandler);
   displayers[1] = NULL;
   displayers[2] = NULL;
 
-  keypad_handler_set_data(khandler, displayers);
+  keypad_handler_set_data(mt_data->khandler, displayers);
 
   DBG("Disp[0] = %ld", (long)displayers[0]);
 
@@ -172,7 +218,7 @@ int main (int argc, char **argv)
   ev_loop(loop, 0);
 
   // Free stuff
-
+ out:
   DBG("Freeing stuff");
   socket_handler_stop_listen_inet(&shandler);
   DBG("Close returned: %d", displayer_close(displayers[0]));
@@ -181,8 +227,8 @@ int main (int argc, char **argv)
   display_handler_close(dhandlers[0]);
   display_handler_close(dhandlers[1]);
   display_handler_close(dhandlers[2]);
-  display_handler_close(dhandler);
-  keypad_handler_close(khandler);
+
+  mt_data_free(mt_data);
 
   return 0;
 }
