@@ -483,7 +483,7 @@ int display_handler_draw_bar_vertical(display_handler_t *dhandler,
 
 void display_handler_dump_buffer(display_handler_t *dhandler, int page)
 {
-  if (page < 0 || page > 1) {
+  if (page < 0 || page > DISPLAY_MAX_BUFFERS) {
     DBG("Error");
   } else {
     DBG("+--------------------+");
@@ -497,6 +497,27 @@ void display_handler_dump_buffer(display_handler_t *dhandler, int page)
 	dhandler->buffer[page].column);
   }
 }
+
+
+char *display_handler_buf_to_str(display_handler_t *dhandler, int page)
+{
+  if (page < 0 || page > DISPLAY_MAX_BUFFERS) {
+    DBG("Error");
+    return NULL;
+  } else {
+    char *str = malloc(4*21);
+    strncpy(&str[0], dhandler->buffer[page].data[0], 21);
+    strncpy(&str[21], dhandler->buffer[page].data[1], 21);
+    strncpy(&str[42], dhandler->buffer[page].data[2], 21);
+    strncpy(&str[63], dhandler->buffer[page].data[3], 21);
+    str[20] = '\n';
+    str[41] = '\n';
+    str[62] = '\n';
+    str[83] = '\0';
+    return str;
+  }
+}
+
 
 /*
 ************************************************************

@@ -1,5 +1,5 @@
-#ifndef _DISPLAYER_HANDLER_H
-#define _DISPLAYER_HANDLER_H
+#ifndef _DISPLAY_HANDLER_H
+#define _DISPLAY_HANDLER_H
 
 #include <ev.h>
 
@@ -164,7 +164,16 @@ int display_handler_draw_bar_horizontal(display_handler_t *, int, int, int);
 int display_handler_draw_bar_vertical(display_handler_t *, int, int);
 
 
-// Dumps given buffer page with DBG
+/*
+  Dumps given buffer page with DBG.
+*/
 void display_handler_dump_buffer(display_handler_t *, int);
+
+/*
+  Creates string from given buffer. String is dynamically
+  allocated and must be freed by caller.
+  String: "Line1\nLine2\nLine3\nLine4\0"
+ */
+char *display_handler_buf_to_str(display_handler_t *, int);
 
 #endif

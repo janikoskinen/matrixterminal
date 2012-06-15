@@ -1,7 +1,9 @@
+#define _SVID_SOURCE 1
 
 #include <ev.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <jansson.h>
@@ -28,6 +30,9 @@
 struct matrixterminal_data {
   display_handler_t *dhandler;
   keypad_handler_t *khandler;
+
+  display_handler_t *dhandlers[MAX_DISPLAYERS];
+  displayer_t *displayers[MAX_DISPLAYERS];
 };
 
 
@@ -116,6 +121,8 @@ static void message_received_cb(socket_handler_t *sh, int fd,
   DBG("Message received from FD %d", fd);
   DBG("  content: '%s'", msg->data);
 
+  struct matrixterminal_data *mtdata = (struct matrixterminal_data *)cb_data;
+
   // Verify json
   const char *cmdstr = NULL;
   json_t *cmd = NULL;
@@ -134,7 +141,13 @@ static void message_received_cb(socket_handler_t *sh, int fd,
       if (item != NULL) {
 	const char *itemstr = json_string_value(item);
 	if (strcmp(itemstr, "screen") == 0) {
-	  message_t *msg = message_create_from("{\"result\": \"ok\", \"screen\": \" * FORECA * \"}");
+	  // TODO: CB_DATA ensin kuntoon ja sieltä dh_buf_to_str()
+	  char *msgtemplate = "screen: \"%s\"";
+	  char *bufdata = display_handler_buf_to_str(mtdata->dhandlers[0], 1);
+	  int msgstrlen = strlen(msgtemplate) + strlen(bufdata) + 1;
+	  char *msgstr = alloca(msgstrlen+1);
+	  snprintf(msgstr, msgstrlen, msgtemplate, bufdata);
+	  message_t *msg = message_create_from(msgstr);
 	  socket_handler_reply_message(sh, fd, msg);
 	} else {
 	  DBG("Unknown request");
@@ -190,8 +203,8 @@ int main (int argc, char **argv)
   int keypad_fd = STDIN_FILENO;
 
   // Handlers for displayers
-  display_handler_t *dhandlers[3] = {NULL, NULL, NULL};
-  displayer_t *displayers[3] = {NULL, NULL, NULL};
+  //display_handler_t *dhandlers[3] = {NULL, NULL, NULL};
+  //displayer_t *displayers[3] = {NULL, NULL, NULL};
 
   socket_handler_t shandler;
 
@@ -226,18 +239,18 @@ int main (int argc, char **argv)
   ev_signal_start(loop, &sigint_watcher);
 
   // Set displayers
-  dhandlers[0] = display_handler_init(loop, display_fd);
-  dhandlers[1] = NULL;
-  dhandlers[2] = NULL;
+  mt_data->dhandlers[0] = display_handler_init(loop, display_fd);
+  mt_data->dhandlers[1] = NULL;
+  mt_data->dhandlers[2] = NULL;
 
-  displayers[0] = displayer_create("weather", loop, dhandlers[0], mt_data->khandler);
+  mt_data->displayers[0] = displayer_create("weather", loop, mt_data->dhandlers[0], mt_data->khandler);
   //  displayers[0] = displayer_create("test", loop, dhandlers[0], mt_data->khandler);
-  displayers[1] = NULL;
-  displayers[2] = NULL;
+  mt_data->displayers[1] = NULL;
+  mt_data->displayers[2] = NULL;
 
-  keypad_handler_set_data(mt_data->khandler, displayers);
+  keypad_handler_set_data(mt_data->khandler, mt_data->displayers);
 
-  DBG("Disp[0] = %ld", (long)displayers[0]);
+  DBG("Disp[0] = %ld", (long)mt_data->displayers[0]);
 
   // Set remote access
   DBG("Starting remote access, listening to port %d.", DEF_PORT);
@@ -247,10 +260,11 @@ int main (int argc, char **argv)
 				   connection_accepted_cb,
 				   message_received_cb,
 				   message_sent_cb);
+  socket_handler_set_received_cb_default_data(&shandler, (void*)mt_data);
 
   // Start displayers
-  displayer_start(displayers[0]);
-  set_active_displayer(displayers, displayers[0]);
+  displayer_start(mt_data->displayers[0]);
+  set_active_displayer(mt_data->displayers, mt_data->displayers[0]);
 
   DBG("Beginning loop");
 
@@ -260,12 +274,12 @@ int main (int argc, char **argv)
  out:
   DBG("Freeing stuff");
   socket_handler_stop_listen_inet(&shandler);
-  DBG("Close returned: %d", displayer_close(displayers[0]));
-  displayer_close(displayers[1]);
-  displayer_close(displayers[2]);
-  display_handler_close(dhandlers[0]);
-  display_handler_close(dhandlers[1]);
-  display_handler_close(dhandlers[2]);
+  DBG("Close returned: %d", displayer_close(mt_data->displayers[0]));
+  displayer_close(mt_data->displayers[1]);
+  displayer_close(mt_data->displayers[2]);
+  display_handler_close(mt_data->dhandlers[0]);
+  display_handler_close(mt_data->dhandlers[1]);
+  display_handler_close(mt_data->dhandlers[2]);
 
   mt_data_free(mt_data);
 
