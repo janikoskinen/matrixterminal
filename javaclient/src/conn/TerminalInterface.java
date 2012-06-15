@@ -53,8 +53,13 @@ public class TerminalInterface {
 	}
 
 	public void sendMessage(Message msg) {
+		boolean ok = true;
+		if (sock == null || sockin == null) {
+			ok = reconnect();
+		}
+
 		String msgstring = msg.toSendFormat();
-		if (sock != null && sockout != null) {
+		if (ok) {
 			sockout.println(msgstring);
 			System.out.println("Message:\n"+msgstring+" sent");
 		} else {
@@ -63,18 +68,21 @@ public class TerminalInterface {
 	}
 
 	public String readAll() {
-		if (sock != null && sockin != null) {
+		boolean ok = (sock != null) && (sockin != null);
+		if (ok) {
 			String retstr = "";
 			String str = "";
 			do {
 				try {
 					str = sockin.readLine();
 				} catch (Exception ex) {
-					ex.printStackTrace();
+					//ex.printStackTrace();
+					System.out.println("Connection lost");
+					ok = false;
 				}
 				if (str != null)
 					retstr += str;
-			} while (str != null);
+			} while (str != null && ok);
 			return "";
 		} else {
 			System.out.println("No connection, nothing read");
