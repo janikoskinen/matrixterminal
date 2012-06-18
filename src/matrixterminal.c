@@ -145,7 +145,7 @@ static void message_received_cb(socket_handler_t *sh, int fd,
 	  char *msgtemplate = "screen: \"%s\"";
 	  char *bufdata = display_handler_buf_to_str(mtdata->dhandlers[0], 1);
 	  int msgstrlen = strlen(msgtemplate) + strlen(bufdata) + 1;
-	  char *msgstr = alloca(msgstrlen+1);
+	  char *msgstr = malloc(msgstrlen+1);
 	  snprintf(msgstr, msgstrlen, msgtemplate, bufdata);
 	  message_t *msg = message_create_from(msgstr);
 	  socket_handler_reply_message(sh, fd, msg);
