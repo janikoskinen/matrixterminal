@@ -75,7 +75,8 @@ public class RemoteInterface extends JFrame implements ActionListener {
 			}
 		});
 
-		terminal = new TerminalInterface("192.168.1.2", 6100);
+		//terminal = new TerminalInterface("192.168.1.2", 6100);
+		terminal = new TerminalInterface("127.0.0.1", 6100);
 
 	}
 
